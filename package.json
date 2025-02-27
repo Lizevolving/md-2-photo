@@ -1,15 +1,23 @@
 {
-  "name": "miniprogram-ts-quickstart",
+  "name": "markdown-to-image",
   "version": "1.0.0",
-  "description": "",
+  "description": "将Markdown文本转换为图片的微信小程序",
   "scripts": {
+    "compile": "./node_modules/typescript/bin/tsc",
+    "tsc": "node ./node_modules/typescript/lib/tsc.js"
   },
-  "keywords": [],
+  "keywords": [
+    "markdown",
+    "image",
+    "wechat",
+    "miniprogram"
+  ],
   "author": "",
-  "license": "",
+  "license": "MIT",
   "dependencies": {
+    "miniprogram-api-typings": "^3.12.2"
   },
   "devDependencies": {
-    "miniprogram-api-typings": "^2.8.3-1"
+    "typescript": "^5.3.3"
   }
 }

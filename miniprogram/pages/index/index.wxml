@@ -1,27 +1,59 @@
-<!--index.wxml-->
-<scroll-view class="scrollarea" scroll-y type="list">
-  <view class="container">
-    <view class="userinfo">
-      <block wx:if="{{canIUseNicknameComp && !hasUserInfo}}">
-        <button class="avatar-wrapper" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
-          <image class="avatar" src="{{userInfo.avatarUrl}}"></image>
-        </button>
-        <view class="nickname-wrapper">
-          <text class="nickname-label">昵称</text>
-          <input type="nickname" class="nickname-input" placeholder="请输入昵称" bind:change="onInputChange" />
-        </view>
-      </block>
-      <block wx:elif="{{!hasUserInfo}}">
-        <button wx:if="{{canIUseGetUserProfile}}" bindtap="getUserProfile"> 获取头像昵称 </button>
-        <view wx:else> 请使用2.10.4及以上版本基础库 </view>
-      </block>
-      <block wx:else>
-        <image bindtap="bindViewTap" class="userinfo-avatar" src="{{userInfo.avatarUrl}}" mode="cover"></image>
-        <text class="userinfo-nickname">{{userInfo.nickName}}</text>
-      </block>
-    </view>
-    <view class="usermotto">
-      <text class="user-motto">{{motto}}</text>
+<view class="container">
+  <!-- 标题 -->
+  <view class="title">文图</view>
+
+  <!-- 问题编辑区 -->
+  <view class="edit-area question-area">
+    <textarea 
+      class="input-area" 
+      placeholder="在此粘贴问题..." 
+      model:value="{{questionContent}}"
+      bindinput="handleQuestionInput"
+    />
+    <view class="paste-btn {{questionContent ? 'hidden' : ''}}" bindtap="handlePasteQuestion">
+      <image class="paste-icon" src="/assets/icons/paste.png" />
+      粘贴
     </view>
   </view>
-</scroll-view>
+
+  <!-- 回答编辑区 -->
+  <view class="edit-area answer-area">
+    <textarea 
+      class="input-area" 
+      placeholder="在此粘贴回答..." 
+      model:value="{{answerContent}}"
+      bindinput="handleAnswerInput"
+    />
+    <view class="button-group">
+      <view class="paste-btn {{answerContent ? 'hidden' : ''}}" bindtap="handlePasteAnswer">
+        <image class="paste-icon" src="/assets/icons/paste.png" />
+        粘贴
+      </view>
+      <view class="fullscreen-btn" bindtap="handleFullscreen">
+        <image class="fullscreen-icon" src="/assets/icons/fullscreen.png" />
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部按钮组 -->
+  <view class="bottom-buttons">
+    <button 
+      class="action-btn clear {{hasContent ? 'active' : ''}}" 
+      bindtap="handleClear"
+    >清空内容</button>
+    <button 
+      class="action-btn convert {{hasContent ? 'active' : ''}}" 
+      bindtap="handleConvertToImage"
+    >转换成图片</button>
+    <button 
+      class="action-btn text {{hasContent ? 'active' : ''}}" 
+      bindtap="handleConvertToText"
+    >转换纯文本</button>
+  </view>
+
+  <!-- 水印开关 -->
+  <view class="watermark-switch">
+    <text>添加 内容由DeepSeek 生成的 水印</text>
+    <switch checked="{{showWatermark}}" bindchange="handleWatermarkChange" />
+  </view>
+</view> 

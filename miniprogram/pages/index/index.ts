@@ -1,54 +1,107 @@
-// index.ts
-// 获取应用实例
-const app = getApp<IAppOption>()
-const defaultAvatarUrl = 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0'
+interface IPageData {
+  questionContent: string;
+  answerContent: string;
+  showWatermark: boolean;
+  hasContent: boolean;
+}
 
-Component({
+Page<IPageData>({
   data: {
-    motto: 'Hello World',
-    userInfo: {
-      avatarUrl: defaultAvatarUrl,
-      nickName: '',
-    },
-    hasUserInfo: false,
-    canIUseGetUserProfile: wx.canIUse('getUserProfile'),
-    canIUseNicknameComp: wx.canIUse('input.type.nickname'),
+    questionContent: '',
+    answerContent: '',
+    showWatermark: false,
+    hasContent: false
   },
-  methods: {
-    // 事件处理函数
-    bindViewTap() {
-      wx.navigateTo({
-        url: '../logs/logs',
-      })
-    },
-    onChooseAvatar(e: any) {
-      const { avatarUrl } = e.detail
-      const { nickName } = this.data.userInfo
+
+  handleQuestionInput(e: WechatMiniprogram.Input) {
+    this.setData({
+      questionContent: e.detail.value,
+      hasContent: !!(e.detail.value || this.data.answerContent)
+    });
+  },
+
+  handleAnswerInput(e: WechatMiniprogram.Input) {
+    this.setData({
+      answerContent: e.detail.value,
+      hasContent: !!(e.detail.value || this.data.questionContent)
+    });
+  },
+
+  async handlePasteQuestion() {
+    try {
+      const { data } = await wx.getClipboardData();
       this.setData({
-        "userInfo.avatarUrl": avatarUrl,
-        hasUserInfo: nickName && avatarUrl && avatarUrl !== defaultAvatarUrl,
-      })
-    },
-    onInputChange(e: any) {
-      const nickName = e.detail.value
-      const { avatarUrl } = this.data.userInfo
+        questionContent: data,
+        hasContent: !!(data || this.data.answerContent)
+      });
+    } catch (error) {
+      wx.showToast({
+        title: '粘贴失败',
+        icon: 'none'
+      });
+    }
+  },
+
+  async handlePasteAnswer() {
+    try {
+      const { data } = await wx.getClipboardData();
       this.setData({
-        "userInfo.nickName": nickName,
-        hasUserInfo: nickName && avatarUrl && avatarUrl !== defaultAvatarUrl,
-      })
-    },
-    getUserProfile() {
-      // 推荐使用wx.getUserProfile获取用户信息，开发者每次通过该接口获取用户个人信息均需用户确认，开发者妥善保管用户快速填写的头像昵称，避免重复弹窗
-      wx.getUserProfile({
-        desc: '展示用户信息', // 声明获取用户个人信息后的用途，后续会展示在弹窗中，请谨慎填写
-        success: (res) => {
-          console.log(res)
+        answerContent: data,
+        hasContent: !!(data || this.data.questionContent)
+      });
+    } catch (error) {
+      wx.showToast({
+        title: '粘贴失败',
+        icon: 'none'
+      });
+    }
+  },
+
+  handleFullscreen() {
+    wx.showToast({
+      title: '全屏编辑功能开发中',
+      icon: 'none'
+    });
+  },
+
+  handleClear() {
+    if (!this.data.hasContent) return;
+    
+    wx.showModal({
+      title: '提示',
+      content: '确定要清空所有内容吗？',
+      success: (res) => {
+        if (res.confirm) {
           this.setData({
-            userInfo: res.userInfo,
-            hasUserInfo: true
-          })
+            questionContent: '',
+            answerContent: '',
+            hasContent: false
+          });
         }
-      })
-    },
+      }
+    });
   },
-})
+
+  handleConvertToImage() {
+    if (!this.data.hasContent) return;
+    
+    wx.navigateTo({
+      url: '/pages/preview/preview'
+    });
+  },
+
+  handleConvertToText() {
+    if (!this.data.hasContent) return;
+    
+    wx.showToast({
+      title: '纯文本转换功能开发中',
+      icon: 'none'
+    });
+  },
+
+  handleWatermarkChange(e: WechatMiniprogram.Switch) {
+    this.setData({
+      showWatermark: e.detail.value
+    });
+  }
+}); 

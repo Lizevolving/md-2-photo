@@ -1,62 +1,121 @@
-/**index.wxss**/
-page {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-.scrollarea {
-  flex: 1;
-  overflow-y: hidden;
-}
-
-.userinfo {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  color: #aaa;
-  width: 80%;
-}
-
-.userinfo-avatar {
-  overflow: hidden;
-  width: 128rpx;
-  height: 128rpx;
-  margin: 20rpx;
-  border-radius: 50%;
-}
-
-.usermotto {
-  margin-top: 200px;
-}
-
-.avatar-wrapper {
-  padding: 0;
-  width: 56px !important;
-  border-radius: 8px;
-  margin-top: 40px;
-  margin-bottom: 40px;
-}
-
-.avatar {
-  display: block;
-  width: 56px;
-  height: 56px;
-}
-
-.nickname-wrapper {
-  display: flex;
-  width: 100%;
-  padding: 16px;
+/* 容器样式 */
+.container {
+  min-height: 100vh;
+  background-color: #000000;
+  padding: 20rpx;
   box-sizing: border-box;
-  border-top: .5px solid rgba(0, 0, 0, 0.1);
-  border-bottom: .5px solid rgba(0, 0, 0, 0.1);
-  color: black;
+  display: flex;
+  flex-direction: column;
 }
 
-.nickname-label {
-  width: 105px;
+/* 标题样式 */
+.title {
+  color: #ffffff;
+  font-size: 36rpx;
+  font-weight: bold;
+  margin: 20rpx 0 40rpx;
 }
 
-.nickname-input {
+/* 编辑区域公共样式 */
+.edit-area {
+  width: 100%;
+  background-color: #1a1a1a;
+  border-radius: 16rpx;
+  margin-bottom: 20rpx;
+  position: relative;
+  padding: 20rpx;
+  box-sizing: border-box;
+}
+
+/* 问题编辑区 */
+.question-area {
+  height: 160rpx;
+}
+
+/* 回答编辑区 */
+.answer-area {
+  height: 400rpx;
+}
+
+/* 输入框样式 */
+.input-area {
+  width: 100%;
+  height: 100%;
+  color: #ffffff;
+  font-size: 28rpx;
+  line-height: 1.6;
+  background: transparent;
+}
+
+/* 粘贴按钮样式 */
+.paste-btn {
+  position: absolute;
+  right: 20rpx;
+  top: 20rpx;
+  display: flex;
+  align-items: center;
+  color: #4080ff;
+  font-size: 28rpx;
+}
+
+.paste-icon {
+  width: 32rpx;
+  height: 32rpx;
+  margin-right: 8rpx;
+}
+
+/* 全屏按钮样式 */
+.fullscreen-btn {
+  position: absolute;
+  right: 20rpx;
+  bottom: 20rpx;
+}
+
+.fullscreen-icon {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+/* 底部按钮组样式 */
+.bottom-buttons {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  padding: 20rpx 0;
+}
+
+.action-btn {
   flex: 1;
+  margin: 0 10rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  text-align: center;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  background-color: #333333;
+  color: #666666;
 }
+
+.action-btn.active {
+  background-color: #4080ff;
+  color: #ffffff;
+}
+
+.action-btn.clear.active {
+  background-color: #ff4040;
+}
+
+/* 水印开关样式 */
+.watermark-switch {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 0;
+  color: #ffffff;
+  font-size: 24rpx;
+}
+
+/* 隐藏元素 */
+.hidden {
+  display: none;
+} 

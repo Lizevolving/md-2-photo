@@ -4,8 +4,34 @@
 
 
 
-## 2.28
 
+
+
+## 3.2
+
+
+.edit-area {
+  width: calc(100% - 40rpx);   VS   width: 100% 
+（更灵活）
+
+
+这个项目存在以下需要修正的问题：
+目录结构问题：
+项目文件散落在根目录和 miniprogram 目录中，不符合微信小程序的标准目录结构
+应该将所有小程序相关文件统一放在 miniprogram 目录下
+
+文件缺失问题：
+缺少必要的页面文件（index.wxml, preview.wxml 等）；页面的配置可能不完整
+
+冗余文件：根目录下的 app.json, app.ts 与 miniprogram 目录下的文件重复
+
+
+
+
+
+
+
+## 2.28
 
 （744，口是心非）
 project/

@@ -11,17 +11,18 @@
 /* 标题样式 */
 .title {
   color: #ffffff;
-  font-size: 36rpx;
+  font-size: 48rpx;
+  text-align: left;
   font-weight: bold;
   margin: 20rpx 0 40rpx;
 }
 
 /* 编辑区域公共样式 */
 .edit-area {
-  width: 100%;
+  width: calc(100% - 40rpx);
+  margin: 0 auto 20rpx;
   background-color: #1a1a1a;
   border-radius: 16rpx;
-  margin-bottom: 20rpx;
   position: relative;
   padding: 20rpx;
   box-sizing: border-box;
@@ -30,11 +31,16 @@
 /* 问题编辑区 */
 .question-area {
   height: 160rpx;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 回答编辑区 */
 .answer-area {
-  height: 400rpx;
+  flex: 1;
+  min-height: 400rpx;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 输入框样式 */
@@ -45,48 +51,63 @@
   font-size: 28rpx;
   line-height: 1.6;
   background: transparent;
+  padding: 10rpx;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
 
 /* 粘贴按钮样式 */
-.paste-btn {
+.paste-button {
   position: absolute;
   right: 20rpx;
   top: 20rpx;
   display: flex;
   align-items: center;
+  background-color: rgba(64, 128, 255, 0.1);
+  padding: 12rpx 20rpx;
+  border-radius: 8rpx;
   color: #4080ff;
   font-size: 28rpx;
 }
 
-.paste-icon {
-  width: 32rpx;
-  height: 32rpx;
+.paste-button .icon {
+  width: 36rpx;
+  height: 36rpx;
   margin-right: 8rpx;
 }
 
+.paste-button text {
+  color: #4080ff;
+}
+
 /* 全屏按钮样式 */
-.fullscreen-btn {
+.fullscreen-button {
   position: absolute;
   right: 20rpx;
   bottom: 20rpx;
+  background-color: rgba(64, 128, 255, 0.1);
+  padding: 12rpx;
+  border-radius: 8rpx;
 }
 
-.fullscreen-icon {
-  width: 32rpx;
-  height: 32rpx;
+.fullscreen-button .icon {
+  width: 36rpx;
+  height: 36rpx;
+  display: block;
 }
 
 /* 底部按钮组样式 */
 .bottom-buttons {
   margin-top: auto;
   display: flex;
-  justify-content: space-between;
-  padding: 20rpx 0;
+  justify-content: center;
+  gap: 30rpx;
+  padding: 20rpx;
 }
 
 .action-btn {
-  flex: 1;
-  margin: 0 10rpx;
+  flex: 0 1 auto;
   height: 80rpx;
   line-height: 80rpx;
   text-align: center;
@@ -94,6 +115,10 @@
   font-size: 28rpx;
   background-color: #333333;
   color: #666666;
+  border: none;
+  padding: 0 32rpx;
+  min-width: 160rpx;
+  max-width: 200rpx;
 }
 
 .action-btn.active {
@@ -105,17 +130,23 @@
   background-color: #ff4040;
 }
 
-/* 水印开关样式 */
-.watermark-switch {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20rpx 0;
-  color: #ffffff;
-  font-size: 24rpx;
-}
-
 /* 隐藏元素 */
 .hidden {
   display: none;
+}
+
+.editor-area,
+.markdown-input,
+.button {
+  display: none;
+}
+
+.button-group {
+  display: flex;
+  gap: 20rpx;
+  padding: 20rpx 0;
+}
+
+button {
+  flex: 1;
 } 

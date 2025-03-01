@@ -1,0 +1,10 @@
+<!-- preview.wxml -->
+<view class="container">
+  <view class="preview-area">
+    <rich-text nodes="{{nodes}}"></rich-text>
+  </view>
+  <view class="button-group">
+    <button bindtap="onSave" type="primary">保存图片</button>
+    <button bindtap="onBack">返回编辑</button>
+  </view>
+</view> 

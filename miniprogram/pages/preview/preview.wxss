@@ -1,0 +1,30 @@
+.container {
+  padding: 20rpx;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #000000;
+}
+
+.preview-area {
+  flex: 1;
+  background-color: #1e1e1e;
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+  border-radius: 8rpx;
+  overflow-y: auto;
+}
+
+.preview-area rich-text {
+  color: #ffffff;
+}
+
+.button-group {
+  display: flex;
+  gap: 20rpx;
+  padding: 20rpx 0;
+}
+
+button {
+  flex: 1;
+} 

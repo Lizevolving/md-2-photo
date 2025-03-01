@@ -10,9 +10,9 @@
       model:value="{{questionContent}}"
       bindinput="handleQuestionInput"
     />
-    <view class="paste-btn {{questionContent ? 'hidden' : ''}}" bindtap="handlePasteQuestion">
-      <image class="paste-icon" src="/assets/icons/paste.png" />
-      粘贴
+    <view class="paste-button {{questionContent ? 'hidden' : ''}}" bindtap="handlePasteQuestion">
+      <image class="icon" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE2IDEyLjlWMTdDMTYgMTkuMjA5MSAxNC4yMDkxIDIxIDEyIDIxSDdDNC43OTA4NiAyMSAzIDE5LjIwOTEgMyAxN1YxMkMzIDkuNzkwODYgNC43OTA4NiA4IDcgOEgxMS4xIiBzdHJva2U9IiM0MDgwZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CjxwYXRoIGQ9Ik0xNiA4SDIxTTE4LjUgNS41TDIxIDhMMTguNSAxMC41IiBzdHJva2U9IiM0MDgwZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPg==" />
+      <text>粘贴</text>
     </view>
   </view>
 
@@ -25,12 +25,12 @@
       bindinput="handleAnswerInput"
     />
     <view class="button-group">
-      <view class="paste-btn {{answerContent ? 'hidden' : ''}}" bindtap="handlePasteAnswer">
-        <image class="paste-icon" src="/assets/icons/paste.png" />
-        粘贴
+      <view class="paste-button {{answerContent ? 'hidden' : ''}}" bindtap="handlePasteAnswer">
+        <image class="icon" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE2IDEyLjlWMTdDMTYgMTkuMjA5MSAxNC4yMDkxIDIxIDEyIDIxSDdDNC43OTA4NiAyMSAzIDE5LjIwOTEgMyAxN1YxMkMzIDkuNzkwODYgNC43OTA4NiA4IDcgOEgxMS4xIiBzdHJva2U9IiM0MDgwZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CjxwYXRoIGQ9Ik0xNiA4SDIxTTE4LjUgNS41TDIxIDhMMTguNSAxMC41IiBzdHJva2U9IiM0MDgwZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPg==" />
+        <text>粘贴</text>
       </view>
-      <view class="fullscreen-btn" bindtap="handleFullscreen">
-        <image class="fullscreen-icon" src="/assets/icons/fullscreen.png" />
+      <view class="fullscreen-button" bindtap="handleFullscreen">
+        <image class="icon" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTMgM0g4TTIxIDNIMTZNMyAyMUg4TTIxIDIxSDE2TTMgM1Y4TTIxIDNWOE0zIDIxVjE2TTIxIDIxVjE2IiBzdHJva2U9IiM0MDgwZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPg==" />
       </view>
     </view>
   </view>
@@ -49,11 +49,5 @@
       class="action-btn text {{hasContent ? 'active' : ''}}" 
       bindtap="handleConvertToText"
     >转换纯文本</button>
-  </view>
-
-  <!-- 水印开关 -->
-  <view class="watermark-switch">
-    <text>添加 内容由DeepSeek 生成的 水印</text>
-    <switch checked="{{showWatermark}}" bindchange="handleWatermarkChange" />
   </view>
 </view> 

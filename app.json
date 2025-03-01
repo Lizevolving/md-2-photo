@@ -1,7 +1,7 @@
 {
   "pages": [
-    "pages/index/index",
-    "pages/preview/preview"
+    "miniprogram/pages/index/index",
+    "miniprogram/pages/preview/preview"
   ],
   "window": {
     "backgroundTextStyle": "light",
@@ -12,5 +12,6 @@
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json",
+  "componentFramework": "glass-easel",
   "lazyCodeLoading": "requiredComponents"
-} 
+}

@@ -5,7 +5,9 @@ interface IPageData {
   hasContent: boolean;
 }
 
-Page<IPageData>({
+type IPageInstance = WechatMiniprogram.Page.Instance<IPageData, WechatMiniprogram.IAnyObject>;
+
+Page<IPageData, IPageInstance>({
   data: {
     questionContent: '',
     answerContent: '',
@@ -13,28 +15,60 @@ Page<IPageData>({
     hasContent: false
   },
 
+  onLoad() {
+    // 页面加载时的初始化逻辑
+  },
+
+  onShow() {
+    // 页面显示时的逻辑
+  },
+
+  onHide() {
+    // 页面隐藏时的逻辑
+  },
+
+  onUnload() {
+    // 页面卸载时的逻辑
+  },
+
   handleQuestionInput(e: WechatMiniprogram.Input) {
+    const value = e.detail.value;
     this.setData({
-      questionContent: e.detail.value,
-      hasContent: !!(e.detail.value || this.data.answerContent)
+      questionContent: value,
+      hasContent: !!(value || this.data.answerContent)
     });
   },
 
   handleAnswerInput(e: WechatMiniprogram.Input) {
+    const value = e.detail.value;
     this.setData({
-      answerContent: e.detail.value,
-      hasContent: !!(e.detail.value || this.data.questionContent)
+      answerContent: value,
+      hasContent: !!(value || this.data.questionContent)
     });
   },
 
   async handlePasteQuestion() {
     try {
       const { data } = await wx.getClipboardData();
+      if (!data) {
+        wx.showToast({
+          title: '剪贴板为空',
+          icon: 'none'
+        });
+        return;
+      }
+      
       this.setData({
         questionContent: data,
         hasContent: !!(data || this.data.answerContent)
       });
+
+      wx.showToast({
+        title: '粘贴成功',
+        icon: 'success'
+      });
     } catch (error) {
+      console.error('粘贴失败:', error);
       wx.showToast({
         title: '粘贴失败',
         icon: 'none'
@@ -45,11 +79,25 @@ Page<IPageData>({
   async handlePasteAnswer() {
     try {
       const { data } = await wx.getClipboardData();
+      if (!data) {
+        wx.showToast({
+          title: '剪贴板为空',
+          icon: 'none'
+        });
+        return;
+      }
+
       this.setData({
         answerContent: data,
         hasContent: !!(data || this.data.questionContent)
       });
+
+      wx.showToast({
+        title: '粘贴成功',
+        icon: 'success'
+      });
     } catch (error) {
+      console.error('粘贴失败:', error);
       wx.showToast({
         title: '粘贴失败',
         icon: 'none'
@@ -99,9 +147,35 @@ Page<IPageData>({
     });
   },
 
-  handleWatermarkChange(e: WechatMiniprogram.Switch) {
+  handleWatermarkChange(e: any) {
     this.setData({
       showWatermark: e.detail.value
+    });
+  },
+
+  onInput(e: WechatMiniprogram.Input) {
+    this.setData({
+      content: e.detail.value
+    });
+  },
+
+  onPreview() {
+    if (!this.data.content.trim()) {
+      wx.showToast({
+        title: '请先输入内容',
+        icon: 'none'
+      });
+      return;
+    }
+    
+    wx.navigateTo({
+      url: '/pages/preview/preview?content=' + encodeURIComponent(this.data.content)
+    });
+  },
+
+  onClear() {
+    this.setData({
+      content: ''
     });
   }
 }); 

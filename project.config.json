@@ -4,7 +4,7 @@
     "ignore": [],
     "include": []
   },
-  "miniprogramRoot": "",
+  "miniprogramRoot": "miniprogram/",
   "compileType": "miniprogram",
   "projectname": "文图",
   "setting": {
@@ -16,22 +16,20 @@
       "disablePlugins": [],
       "outputPath": ""
     },
-    "condition": false,
-    "packNpmManually": false,
-    "packNpmRelationList": [],
-    "minified": true,
+    "urlCheck": true,
     "es6": true,
     "enhance": true,
+    "minified": true,
+    "postcss": true,
     "ignoreUploadUnusedFiles": true
   },
   "simulatorType": "wechat",
-  "simulatorPluginLibVersion": {},
-  "condition": {},
-  "srcMiniprogramRoot": "",
   "appid": "wx566220aeff1e738a",
   "libVersion": "3.0.0",
   "editorSetting": {
     "tabIndent": "insertSpaces",
     "tabSize": 2
-  }
+  },
+  "condition": {},
+  "srcMiniprogramRoot": "miniprogram/"
 }

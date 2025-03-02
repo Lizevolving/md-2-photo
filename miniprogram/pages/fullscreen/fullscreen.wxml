@@ -1,0 +1,50 @@
+<view class="fullscreen-container">
+  <!-- 标签页切换 -->
+  <view class="tabs">
+    <view 
+      class="tab {{activeTab === 'question' ? 'active' : ''}}" 
+      bindtap="switchTab" 
+      data-tab="question"
+    >问题</view>
+    <view 
+      class="tab {{activeTab === 'answer' ? 'active' : ''}}" 
+      bindtap="switchTab" 
+      data-tab="answer"
+    >回答</view>
+  </view>
+
+  <!-- 编辑区域 -->
+  <view class="edit-container">
+    <!-- 问题编辑区 -->
+    <view class="edit-area {{activeTab === 'question' ? 'active' : 'hidden'}}">
+      <textarea 
+        class="input-area" 
+        placeholder="在此编辑问题..." 
+        value="{{questionContent}}"
+        bindinput="handleQuestionInput"
+        auto-height
+        show-confirm-bar="{{false}}"
+        maxlength="-1"
+      />
+    </view>
+
+    <!-- 回答编辑区 -->
+    <view class="edit-area {{activeTab === 'answer' ? 'active' : 'hidden'}}">
+      <textarea 
+        class="input-area" 
+        placeholder="在此编辑回答..." 
+        value="{{answerContent}}"
+        bindinput="handleAnswerInput"
+        auto-height
+        show-confirm-bar="{{false}}"
+        maxlength="-1"
+      />
+    </view>
+  </view>
+
+  <!-- 底部按钮 -->
+  <view class="bottom-buttons">
+    <button class="btn cancel" bindtap="cancelAndReturn">取消</button>
+    <button class="btn save" bindtap="saveAndReturn">保存</button>
+  </view>
+</view> 

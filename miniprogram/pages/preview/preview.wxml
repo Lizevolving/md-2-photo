@@ -1,10 +1,11 @@
 <!-- preview.wxml -->
-<view class="container">
-  <view class="preview-area">
-    <rich-text nodes="{{nodes}}"></rich-text>
-  </view>
-  <view class="button-group">
-    <button bindtap="onSave" type="primary">保存图片</button>
-    <button bindtap="onBack">返回编辑</button>
+<view class="preview-container">
+  <!-- 画布区域 -->
+  <canvas type="2d" id="previewCanvas" class="preview-canvas"></canvas>
+  
+  <!-- 底部按钮 -->
+  <view class="bottom-buttons">
+    <button class="btn back" bindtap="goBack">返回</button>
+    <button class="btn save" bindtap="saveImage">保存图片</button>
   </view>
 </view> 

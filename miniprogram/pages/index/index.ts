@@ -211,29 +211,14 @@ Page({
     if (!this.data.hasContent) return;
     
     console.log('转换为纯文本');
+  
     
-    // 组合问题和回答内容
-    const textContent = `问题：\n${this.data.questionContent}\n\n回答：\n${this.data.answerContent}`;
-    
-    // 复制到剪贴板
-    wx.setClipboardData({
-      data: textContent,
-      success: () => {
-        wx.showToast({
-          title: '已复制到剪贴板',
-          icon: 'success'
-        });
-      },
-      fail: (err) => {
-        console.error('复制失败:', err);
-        wx.showToast({
-          title: '复制失败',
-          icon: 'none'
-        });
-      }
+    // 显示文本预览弹窗
+    this.selectComponent('#textPreview').setData({
+      visible: true,
+      content: this.data.answerContent
     });
   },
-
   /**
    * 处理水印开关变化
    */
@@ -243,4 +228,4 @@ Page({
     });
     console.log('水印状态:', e.detail.value);
   }
-}); 
+});

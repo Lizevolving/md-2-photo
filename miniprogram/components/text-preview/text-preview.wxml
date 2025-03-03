@@ -1,0 +1,16 @@
+<view class="text-preview-modal" wx:if="{{visible}}">  
+  <view class="modal-content">
+    <view class="modal-header">
+      <view class="icon-button" bindtap="handleClose">
+        <image class="icon" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE4IDZMNiAxOE02IDZMMTggMTgiIHN0cm9rZT0iIzQwODBmZiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+" />
+      </view>
+      <view class="title">纯文本预览</view>
+      <view class="icon-button" bindtap="handleCopy">
+        <image class="icon" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE2IDEyLjlWMTdDMTYgMTkuMjA5MSAxNC4yMDkxIDIxIDEyIDIxSDdDNC43OTA4NiAyMSAzIDE5LjIwOTEgMyAxN1YxMkMzIDkuNzkwODYgNC43OTA4NiA4IDcgOEgxMS4xIiBzdHJva2U9IiM0MDgwZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CjxwYXRoIGQ9Ik0xNiA4SDIxTTE4LjUgNS41TDIxIDhMMTguNSAxMC41IiBzdHJva2U9IiM0MDgwZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPg==" />
+      </view>
+    </view>
+    <scroll-view class="text-content" scroll-y>
+      <text>{{content}}</text>
+    </scroll-view>
+  </view>
+</view>

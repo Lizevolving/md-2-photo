@@ -5,7 +5,14 @@
 
 
 
+## 3.4
 
+
+一开始的默认的路径就是带有mini program，再加那就相当于是在mini program下面找mini program。
+  "usingComponents": {
+    "text-preview": "/components/text-preview/text-preview"
+  }
+}
 
 
 

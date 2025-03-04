@@ -2,11 +2,39 @@
 
 
 
+## 3.5
+
+(这告诉我们一个什么道理？他妈的，能有调试日志的赶快都给我安上去，这不一下就把问题定位到视图层了吗？)
+
+Content changed: 
+
+### 1. 弹窗TS文件的简洁、高效、强大对比与优化
+#### 对比分析：
+• **版本1**：
+  • 使用 `observer` 函数来监听 `content` 的变化，并在变化时调用 `removeMarkdown` 函数。
+  • 在 `observer` 中，通过比
+
+plainContent updated: 
+
+弹窗TS文件的简洁、高效、强大对比与优化
+对比分析：
+• 版本1：
+  • 使用 observer 函数来监听 content 的变化，并在变化时调用 removeMarkdown 函数。
+  • 在 observer 中，通过比
+
+
+
+震惊，没想到在样式表这里加一个这个，就可以做到动画效果。
+  animation: slideUp 0.3s ease-out forwards;
+
+
+
+
+
 
 
 
 ## 3.4
-
 
 一开始的默认的路径就是带有mini program，再加那就相当于是在mini program下面找mini program。
   "usingComponents": {

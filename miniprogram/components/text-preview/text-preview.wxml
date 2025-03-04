@@ -10,7 +10,7 @@
       </view>
     </view>
     <scroll-view class="text-content" scroll-y>
-      <text>{{content}}</text>
+      <text>{{plainContent}}</text>
     </scroll-view>
   </view>
 </view>

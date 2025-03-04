@@ -49,19 +49,11 @@
     <button 
       class="action-btn convert {{hasContent ? 'active' : ''}}" 
       bindtap="handleConvertToImage"
-    >生成图片</button>
+    >转换成图片</button>
     <button 
-      class="action-btn convert {{hasContent ? 'active' : ''}}" 
+      class="action-btn text {{hasContent ? 'active' : ''}}" 
       bindtap="handleConvertToText"
-    >生成文本</button>
+    >转换纯文本</button>
   </view>
-
-  <!-- 水印开关 -->
-  <view class="watermark-switch">
-    <switch checked="{{showWatermark}}" bindchange="handleWatermarkChange" />
-    <text>添加水印</text>
-  </view>
-
-  <!-- 文本预览组件 -->
-  <text-preview id="textPreview" />
+  <text-preview id="textPreview"></text-preview>
 </view>

@@ -5,6 +5,7 @@
   "backgroundColor": "#000000",
   "backgroundTextStyle": "light",
   "usingComponents": {
-    "text-preview": "/components/text-preview/text-preview"
+    "text-preview": "/components/text-preview/text-preview",
+    "fullscreen-editor": "/components/fullscreen-editor/fullscreen-editor"
   }
 }

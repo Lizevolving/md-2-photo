@@ -153,19 +153,6 @@ Page({
     await this.handlePaste('answer');
   },
 
-  /**
-   * 处理全屏编辑
-   */
-  handleFullscreen() {
-    if (!this.data.hasContent) return;
-    
-    console.log('进入全屏编辑模式');
-    
-    // 导航到全屏编辑页面，并传递问题和回答内容        // 为什么这里传数据这么丝滑，之前折腾半天？
-    wx.navigateTo({
-      url: '/pages/fullscreen/fullscreen?questionContent=' + encodeURIComponent(this.data.questionContent) + '&answerContent=' + encodeURIComponent(this.data.answerContent)
-    });
-  },
 
   /**
    * 处理清空内容
@@ -204,6 +191,24 @@ Page({
     });
   },
 
+
+
+  /**
+   * 处理全屏编辑
+   */
+  handleFullscreen() {
+    if (!this.data.hasContent) return;
+    
+    console.log('进入全屏编辑模式');
+    
+    // 显示全屏编辑器
+    this.selectComponent('#fullscreen-editor').setData({
+      visible: true,
+      answerContent: this.data.answerContent
+    });
+  },
+
+
   /**
    * 处理转换为纯文本
    */
@@ -219,13 +224,4 @@ Page({
       content: this.data.answerContent
     });
   },
-  /**
-   * 处理水印开关变化
-   */
-  handleWatermarkChange(e: any) {
-    this.setData({
-      showWatermark: e.detail.value
-    });
-    console.log('水印状态:', e.detail.value);
-  }
 });

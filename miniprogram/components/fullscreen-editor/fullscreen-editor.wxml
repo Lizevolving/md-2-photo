@@ -1,0 +1,23 @@
+<view class="fullscreen-editor {{visible ? 'visible' : ''}}">
+  <view class="editor-content {{expanded ? 'expanded' : ''}}">
+    <!-- 关闭按钮 -->
+    <view class="close-button" bindtap="handleCancel">
+      <text>×</text>
+    </view>
+
+    <!-- 编辑区域 -->
+    <view class="edit-container">
+      <view class="edit-area">
+        <textarea 
+          class="input-area" 
+          placeholder="在此编辑回答..." 
+          value="{{answerContent}}"
+          bindinput="handleAnswerInput"
+          auto-height
+          show-confirm-bar="{{false}}"
+          maxlength="-1"
+        />
+      </view>
+    </view>
+  </view>
+</view>

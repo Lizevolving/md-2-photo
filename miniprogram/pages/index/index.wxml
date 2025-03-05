@@ -40,6 +40,9 @@
     </view>
   </view>
 
+  <!-- 全屏编辑器组件 -->
+  <fullscreen-editor id="fullscreen-editor" />
+
   <!-- 底部按钮组 -->
   <view class="bottom-buttons">
     <button 

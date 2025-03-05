@@ -1,7 +1,6 @@
 {
   "pages": [
     "pages/index/index",
-    "pages/fullscreen/fullscreen",
     "pages/preview/preview"
   ],
   "window": {

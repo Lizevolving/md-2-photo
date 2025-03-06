@@ -10,7 +10,6 @@
       <view class="edit-area">
         <textarea 
           class="input-area" 
-          placeholder="在此编辑回答..." 
           value="{{answerContent}}"
           bindinput="handleAnswerInput"
           auto-height

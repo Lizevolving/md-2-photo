@@ -11,6 +11,8 @@
       bindinput="handleQuestionInput"
       show-confirm-bar="{{false}}"
       auto-height
+      maxlength="2000"
+      style="min-height: 120rpx; width: 100%; padding: 20rpx; box-sizing: border-box;"
     />
     <view class="paste-button {{questionContent ? 'hidden' : ''}}" bindtap="handlePasteQuestion">
       <image class="icon" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE2IDEyLjlWMTdDMTYgMTkuMjA5MSAxNC4yMDkxIDIxIDEyIDIxSDdDNC43OTA4NiAyMSAzIDE5LjIwOTEgMyAxN1YxMkMzIDkuNzkwODYgNC43OTA4NiA4IDcgOEgxMS4xIiBzdHJva2U9IiM0MDgwZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CjxwYXRoIGQ9Ik0xNiA4SDIxTTE4LjUgNS41TDIxIDhMMTguNSAxMC41IiBzdHJva2U9IiM0MDgwZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPg==" />
@@ -27,7 +29,8 @@
       bindinput="handleAnswerInput"
       show-confirm-bar="{{false}}"
       auto-height
-      style="min-height: 300rpx;"
+      maxlength="5000"
+      style="min-height: 300rpx; width: 100%; padding: 20rpx; box-sizing: border-box;"
     />
     <view class="button-group">
       <view class="paste-button {{answerContent ? 'hidden' : ''}}" bindtap="handlePasteAnswer">

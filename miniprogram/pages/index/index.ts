@@ -208,6 +208,12 @@ Page({
     });
   },
 
+  handleFullscreenSave(e: any) {
+    this.setData({
+      answerContent: e.detail.value,
+    });
+  },
+
 
   /**
    * 处理转换为纯文本

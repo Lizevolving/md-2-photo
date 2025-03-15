@@ -1,49 +1,78 @@
 /* 预览容器 */
 .preview-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
-  height: 100vh;
   background-color: #000000;
-  position: relative;
+}
+
+/* 预览滚动区域 */
+.preview-scroll {
+  flex: 1;
+  width: 100%;
+  background-color: #1a1a1a;
+  overflow: hidden;
 }
 
 /* 预览画布 */
 .preview-canvas {
   width: 100%;
-  height: calc(100% - 100rpx);
+  min-height: 100%;
   background-color: #000000;
 }
 
-/* 底部按钮 */
-.bottom-buttons {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  padding: 20rpx;
+/* 底部操作区 */
+.bottom-area {
+  width: 100%;
   background-color: #1a1a1a;
-  border-top: 2rpx solid #333333;
+  padding: 20rpx 0;
+  border-top: 1px solid #333333;
 }
 
-.btn {
-  flex: 1;
-  height: 80rpx;
-  line-height: 80rpx;
-  text-align: center;
-  border-radius: 12rpx;
-  font-size: 32rpx;
-  margin: 0 10rpx;
+/* 操作按钮区 */
+.action-buttons {
+  display: flex;
+  justify-content: space-around;
+  padding: 20rpx 40rpx;
+  border-bottom: 1px solid #333333;
 }
 
-.btn.back {
-  background-color: #333333;
+/* 单个操作按钮 */
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10rpx;
+}
+
+.btn-icon {
+  width: 48rpx;
+  height: 48rpx;
+  margin-bottom: 10rpx;
+}
+
+.action-btn text {
+  font-size: 24rpx;
   color: #ffffff;
 }
 
-.btn.save {
-  background-color: #4080ff;
+/* 水印开关区域 */
+.watermark-switch {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx 40rpx;
   color: #ffffff;
+  font-size: 28rpx;
+}
+
+/* 开关样式 */
+switch {
+  transform: scale(0.8);
 }
 
 .container {

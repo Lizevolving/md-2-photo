@@ -1,11 +1,40 @@
 <!-- preview.wxml -->
 <view class="preview-container">
-  <!-- 画布区域 -->
-  <canvas type="2d" id="previewCanvas" class="preview-canvas"></canvas>
+  <!-- 图片预览区域 -->
+  <scroll-view class="preview-scroll" scroll-y>
+    <canvas type="2d" id="previewCanvas" class="preview-canvas"></canvas>
+  </scroll-view>
   
-  <!-- 底部按钮 -->
-  <view class="bottom-buttons">
-    <button class="btn back" bindtap="goBack">返回</button>
-    <button class="btn save" bindtap="saveImage">保存图片</button>
+  <!-- 底部操作区 -->
+  <view class="bottom-area">
+    <!-- 主要操作按钮 -->
+    <view class="action-buttons">
+      <view class="action-btn" bindtap="changeTemplate">
+        <image class="btn-icon" src="/assets/icons/template.png" />
+        <text>更换模板</text>
+      </view>
+      <view class="action-btn" bindtap="saveImage">
+        <image class="btn-icon" src="/assets/icons/save.png" />
+        <text>保存相册</text>
+      </view>
+      <view class="action-btn" bindtap="shareToFriends">
+        <image class="btn-icon" src="/assets/icons/share.png" />
+        <text>分享给好友</text>
+      </view>
+      <view class="action-btn" bindtap="shareToMoments">
+        <image class="btn-icon" src="/assets/icons/moments.png" />
+        <text>分享到朋友圈</text>
+      </view>
+      <view class="action-btn" bindtap="shareToOther">
+        <image class="btn-icon" src="/assets/icons/more.png" />
+        <text>分享到其他</text>
+      </view>
+    </view>
+
+    <!-- 水印开关 -->
+    <view class="watermark-switch">
+      <text>添加"由文图生成"水印</text>
+      <switch checked="{{showWatermark}}" bindchange="toggleWatermark" color="#4080ff" />
+    </view>
   </view>
 </view> 

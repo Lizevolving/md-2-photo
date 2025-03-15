@@ -6,6 +6,10 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 /* 标题样式 */
@@ -32,13 +36,18 @@
 
 /* 问题编辑区特有样式 */
 .question-area {
-  height: 160rpx;
+  height: 200rpx;
+  flex-shrink: 0;
 }
 
 /* 回答编辑区特有样式 */
 .answer-area {
   flex: 1;
   min-height: 400rpx;
+  max-height: calc(100vh - 800rpx);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 输入框样式 */
@@ -55,12 +64,14 @@
 /* 问题区域的输入框 */
 .question-area .input-area {
   height: 100%;
+  padding: 20rpx;
 }
 
 /* 回答区域的输入框 */
 .answer-area .input-area {
-  min-height: 300rpx;
-  height: auto;
+  height: 100%;
+  padding: 20rpx;
+  overflow-y: auto;
 }
 
 /* 粘贴按钮样式 */
@@ -108,11 +119,15 @@
 
 /* 底部按钮组样式 */
 .bottom-buttons {
-  margin-top: auto;
+  margin-top: 20rpx;
   display: flex;
   justify-content: center;
   gap: 30rpx;
   padding: 20rpx;
+  flex-shrink: 0;
+  background-color: #000000;
+  position: relative;
+  z-index: 1;
 }
 
 .action-btn {

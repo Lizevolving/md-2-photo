@@ -4,54 +4,57 @@ interface IPageData {
   showWatermark: boolean;
   canvasWidth: number;
   canvasHeight: number;
+  currentTemplate: string;
 }
 
-Page<IPageData>({
+type CanvasContext = WechatMiniprogram.CanvasContext;
+type IPageInstance = WechatMiniprogram.Page.Instance<IPageData>;
+
+Page<IPageData, IPageInstance>({
   data: {
     questionContent: '',
     answerContent: '',
     showWatermark: false,
     canvasWidth: 0,
-    canvasHeight: 0
+    canvasHeight: 0,
+    currentTemplate: 'default' // 当前使用的模板
   },
 
-  onLoad(options) {
-    // 获取传递的参数
-    if (options.questionContent) {
-      this.setData({
-        questionContent: decodeURIComponent(options.questionContent)
-      });
-    }
-
-    if (options.answerContent) {
-      this.setData({
-        answerContent: decodeURIComponent(options.answerContent)
-      });
-    }
-
-    if (options.showWatermark) {
-      this.setData({
-        showWatermark: options.showWatermark === 'true'
-      });
-    }
-
-    console.log('预览页面加载完成');
+  onLoad(options?: Record<string, string | undefined>) {
+    if (!options) return;
     
-    // 获取系统信息，设置画布大小
+    // 解析传入的内容
+    this.parseContent(options);
+    // 初始化画布尺寸
+    this.initCanvasSize();
+  },
+
+  /**
+   * 解析传入的内容
+   */
+  parseContent(options: Record<string, string | undefined>) {
+    const { questionContent, answerContent, showWatermark } = options;
+    
+    this.setData({
+      questionContent: questionContent ? decodeURIComponent(questionContent) : '',
+      answerContent: answerContent ? decodeURIComponent(answerContent) : '',
+      showWatermark: showWatermark === 'true'
+    });
+  },
+
+  /**
+   * 初始化画布尺寸
+   */
+  initCanvasSize() {
     wx.getSystemInfo({
       success: (res) => {
-        const width = res.windowWidth;
-        const height = res.windowHeight;
-        
         this.setData({
-          canvasWidth: width,
-          canvasHeight: height
-        });
-        
-        // 延迟一下再渲染，确保数据已经设置好
-        setTimeout(() => {
+          canvasWidth: res.windowWidth,
+          canvasHeight: res.windowHeight
+        }, () => {
+          // 初始化完成后渲染画布
           this.renderToCanvas();
-        }, 300);
+        });
       }
     });
   },
@@ -59,122 +62,124 @@ Page<IPageData>({
   /**
    * 渲染内容到画布
    */
-  renderToCanvas() {
+  async renderToCanvas() {
     const query = wx.createSelectorQuery();
-    query.select('#previewCanvas')
-      .fields({ node: true, size: true })
-      .exec((res) => {
-        const canvas = res[0].node;
-        const ctx = canvas.getContext('2d');
-        
-        // 设置画布大小
-        canvas.width = this.data.canvasWidth * 2;  // 高清显示
-        canvas.height = this.data.canvasHeight * 2;
-        ctx.scale(2, 2);
-        
-        // 绘制背景
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(0, 0, this.data.canvasWidth, this.data.canvasHeight);
-        
-        // 绘制内容区域背景
-        ctx.fillStyle = '#1a1a1a';
-        ctx.fillRect(20, 60, this.data.canvasWidth - 40, this.data.canvasHeight - 120);
-        
-        // 绘制标题
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 24px sans-serif';
-        ctx.fillText('文图', 20, 40);
-        
-        // 绘制问题标签
-        ctx.fillStyle = '#4080ff';
-        ctx.font = '16px sans-serif';
-        ctx.fillText('问题', 30, 90);
-        
-        // 绘制问题内容
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '14px sans-serif';
-        this.wrapText(ctx, this.data.questionContent, 30, 120, this.data.canvasWidth - 60, 20);
-        
-        // 计算问题文本高度
-        const questionHeight = this.calculateTextHeight(ctx, this.data.questionContent, this.data.canvasWidth - 60, 20);
-        
-        // 绘制回答标签
-        ctx.fillStyle = '#4080ff';
-        ctx.font = '16px sans-serif';
-        ctx.fillText('回答', 30, 140 + questionHeight);
-        
-        // 绘制回答内容
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '14px sans-serif';
-        this.wrapText(ctx, this.data.answerContent, 30, 170 + questionHeight, this.data.canvasWidth - 60, 20);
-        
-        // 绘制水印
-        if (this.data.showWatermark) {
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-          ctx.font = '12px sans-serif';
-          ctx.fillText('由文图小程序生成', this.data.canvasWidth - 150, this.data.canvasHeight - 30);
-        }
-      });
+    const canvas = await new Promise<WechatMiniprogram.Canvas>(resolve => {
+      query.select('#previewCanvas')
+        .fields({ node: true, size: true })
+        .exec((res) => resolve(res[0].node));
+    });
+
+    const ctx = canvas.getContext('2d');
+    
+    // 设置画布尺寸（高清显示）
+    const dpr = wx.getSystemInfoSync().pixelRatio;
+    canvas.width = this.data.canvasWidth * dpr;
+    canvas.height = this.data.canvasHeight * dpr;
+    ctx.scale(dpr, dpr);
+
+    // 根据当前模板渲染内容
+    await this.renderTemplate(ctx);
   },
 
   /**
-   * 文本换行绘制
+   * 根据模板渲染内容
    */
-  wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-    if (!text) return;
+  async renderTemplate(ctx: any) {
+    // 清空画布
+    ctx.clearRect(0, 0, this.data.canvasWidth, this.data.canvasHeight);
+
+    switch (this.data.currentTemplate) {
+      case 'simple':
+        await this.renderSimpleTemplate(ctx);
+        break;
+      case 'book':
+        await this.renderBookTemplate(ctx);
+        break;
+      case 'dialog':
+        await this.renderDialogTemplate(ctx);
+        break;
+      default:
+        await this.renderDefaultTemplate(ctx);
+    }
+  },
+
+  /**
+   * 渲染默认模板
+   */
+  async renderDefaultTemplate(ctx: any) {
+    // 绘制背景
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, this.data.canvasWidth, this.data.canvasHeight);
     
-    const words = text.split('');
+    // 绘制内容区域
+    ctx.fillStyle = '#1a1a1a';
+    const contentPadding = 20;
+    const contentWidth = this.data.canvasWidth - (contentPadding * 2);
+    ctx.fillRect(contentPadding, 60, contentWidth, this.data.canvasHeight - 120);
+
+    // 绘制问题部分
+    let currentY = 90;
+    ctx.fillStyle = '#4080ff';
+    ctx.font = '16px sans-serif';
+    ctx.fillText('问题', contentPadding + 10, currentY);
+    
+    currentY += 30;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '14px sans-serif';
+    currentY = this.drawWrappedText(ctx, this.data.questionContent, contentPadding + 10, currentY, contentWidth - 20);
+
+    // 绘制回答部分
+    currentY += 30;
+    ctx.fillStyle = '#4080ff';
+    ctx.font = '16px sans-serif';
+    ctx.fillText('回答', contentPadding + 10, currentY);
+    
+    currentY += 30;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '14px sans-serif';
+    currentY = this.drawWrappedText(ctx, this.data.answerContent, contentPadding + 10, currentY, contentWidth - 20);
+
+    // 绘制水印
+    if (this.data.showWatermark) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.font = '12px sans-serif';
+      ctx.fillText('由文图小程序生成', this.data.canvasWidth - 150, this.data.canvasHeight - 30);
+    }
+  },
+
+  /**
+   * 绘制自动换行的文本，返回最后一行的Y坐标
+   */
+  drawWrappedText(ctx: any, text: string, x: number, y: number, maxWidth: number): number {
+    const lineHeight = 24;
+    const chars = text.split('');
     let line = '';
-    let testLine = '';
-    let lineCount = 0;
-    
-    for (let n = 0; n < words.length; n++) {
-      testLine = line + words[n];
+    let currentY = y;
+
+    for (const char of chars) {
+      const testLine = line + char;
       const metrics = ctx.measureText(testLine);
-      const testWidth = metrics.width;
       
-      if (testWidth > maxWidth && n > 0) {
-        ctx.fillText(line, x, y + (lineCount * lineHeight));
-        line = words[n];
-        lineCount++;
+      if (metrics.width > maxWidth && line.length > 0) {
+        ctx.fillText(line, x, currentY);
+        line = char;
+        currentY += lineHeight;
       } else {
         line = testLine;
       }
     }
     
-    ctx.fillText(line, x, y + (lineCount * lineHeight));
-    return lineCount + 1;
-  },
-
-  /**
-   * 计算文本高度
-   */
-  calculateTextHeight(ctx, text, maxWidth, lineHeight) {
-    if (!text) return 0;
-    
-    const words = text.split('');
-    let line = '';
-    let testLine = '';
-    let lineCount = 0;
-    
-    for (let n = 0; n < words.length; n++) {
-      testLine = line + words[n];
-      const metrics = ctx.measureText(testLine);
-      const testWidth = metrics.width;
-      
-      if (testWidth > maxWidth && n > 0) {
-        line = words[n];
-        lineCount++;
-      } else {
-        line = testLine;
-      }
+    if (line.length > 0) {
+      ctx.fillText(line, x, currentY);
+      currentY += lineHeight;
     }
-    
-    return (lineCount + 1) * lineHeight;
+
+    return currentY;
   },
 
   /**
-   * 保存图片
+   * 导出图片
    */
   saveImage() {
     wx.canvasToTempFilePath({
@@ -204,6 +209,57 @@ Page<IPageData>({
           icon: 'none'
         });
       }
+    });
+  },
+
+  /**
+   * 分享给好友
+   */
+  shareToFriends() {
+    wx.showShareMenu({
+      withShareTicket: true,
+      menus: ['shareAppMessage']
+    });
+  },
+
+  /**
+   * 分享到朋友圈
+   */
+  shareToMoments() {
+    wx.showShareMenu({
+      withShareTicket: true,
+      menus: ['shareTimeline']
+    });
+  },
+
+  /**
+   * 分享到其他平台
+   */
+  shareToOther() {
+    wx.showActionSheet({
+      itemList: ['复制链接', '生成海报', '保存图片'],
+      success: (res) => {
+        switch (res.tapIndex) {
+          case 0:
+            // 复制链接逻辑
+            break;
+          case 1:
+            // 生成海报逻辑
+            break;
+          case 2:
+            this.saveImage();
+            break;
+        }
+      }
+    });
+  },
+
+  /**
+   * 切换水印显示
+   */
+  toggleWatermark(e: WechatMiniprogram.SwitchChange) {
+    this.setData({ showWatermark: e.detail.value }, () => {
+      this.renderToCanvas();
     });
   },
 

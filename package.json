@@ -15,6 +15,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@khanacademy/simple-markdown": "^0.14.0",
     "miniprogram-api-typings": "^3.12.2"
   },
   "devDependencies": {

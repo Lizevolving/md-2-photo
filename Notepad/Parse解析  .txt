@@ -1,0 +1,167 @@
+1.
+解析(Parse)是将一种格式的数据转换为另一种结构化的数据格式的过程。
+可以类比为：食材处理：将原料切配成可以直接烹饪的状态；乐谱转换：将五线谱转换为简谱
+
+
+2.
+Markdown解析器：
+解析器（Parser）是一种程序或组件，用于将输入的文本（如代码、Markdown、JSON 等）转换为一种结构化的数据形式（如树形结构、对象等），以便后续处理。
+类比：
+解析器就像翻译官，将一种语言（如 Markdown 文本）翻译成另一种语言（如结构化数据），让计算机能够理解和处理。
+
+
+解析器的作用：
+将Markdown文本转换为结构化的AST(抽象语法树)
+处理各种Markdown语法规则(标题、列表、粗体等)
+确保解析结果的一致性和可靠性
+
+使用解析器的好处：
+避免重复造轮子，节省开发时间
+利用成熟方案，减少bug
+有社区支持，持续维护和优化
+
+simple-markdown的适用性分析：
+优点：
+轻量级，适合小程序环境
+可扩展性强，允许自定义规则
+API简单清晰
+
+潜在风险：
+可能不支持某些特殊的Markdown语法
+需要额外处理小程序环境的兼容性
+性能在长文本时可能需要优化
+
+
+simple-markdown 提供了几个关键的 API：
+SimpleMarkdown.defaultBlockParse(source) - 解析块级 Markdown
+SimpleMarkdown.defaultInlineParse(source) - 解析内联 Markdown
+SimpleMarkdown.defaultImplicitParse(source) - 根据内容自动选择解析方式
+SimpleMarkdown.parserFor(rules) - 创建自定义解析器
+SimpleMarkdown.outputFor(rules, key) - 创建自定义输出器
+
+
+
+
+
+3.
+
+AST（Abstract Syntax Tree，抽象语法树）是解析器输出的结构化数据形式，它以树形结构表示输入文本的语法结构。
+每个节点代表一个语法单元（如语句、表达式、标签等）。
+类比：
+AST 就像一本书的目录，将内容按章节、段落、句子等层次组织起来，方便快速查找和理解。
+
+
+为什么最终要解析为 AST？
+结构化数据：
+AST 将文本转换为树形结构，便于程序理解和操作。
+
+便于后续处理：
+AST 可以方便地进行遍历、修改和优化，是渲染、编译、格式化等操作的基础。
+
+跨平台兼容：
+AST 是一种通用的中间表示形式，可以适配不同的渲染目标（如 Canvas、HTML、PDF 等）。
+
+(4) 为什么 AST 便于后续渲染？
+明确的结构：
+AST 清晰地表示文本的层次结构（如标题、段落、列表等），便于按需渲染。
+
+动态修改：
+可以在渲染前对 AST 进行修改（如添加样式、调整顺序等），实现灵活的渲染效果。
+
+高效渲染：
+通过遍历 AST，可以按需渲染节点，避免重复计算和无效渲染。
+
+
+
+4.  
+
+小小实例
+
+（细节都封装好，要做的只有调用）
+
+import SimpleMarkdown from 'simple-markdown';
+
+// 定义 Markdown 文本
+const markdownText = `
+# 标题
+这是一个**加粗**的文本。
+- 列表项 1
+- 列表项 2
+`;
+
+// 解析 Markdown 为 AST
+const ast = SimpleMarkdown.defaultBlockParse(markdownText);
+console.log(ast);
+
+
+
+（真的是树状结构，且也没多复杂）
+
+[
+  {
+    "type": "heading",
+    "level": 1,
+    "content": [
+      { "type": "text", "content": "标题" }
+    ]
+  },
+  {
+    "type": "paragraph",
+    "content": [
+      { "type": "text", "content": "这是一个" },
+      { "type": "strong", "content": [{ "type": "text", "content": "加粗" }] },
+      { "type": "text", "content": "的文本。" }
+    ]
+  },
+  {
+    "type": "list",
+    "ordered": false,
+    "items": [
+      {
+        "content": [
+          { "type": "text", "content": "列表项 1" }
+        ]
+      },
+      {
+        "content": [
+          { "type": "text", "content": "列表项 2" }
+        ]
+      }
+    ]
+  }
+]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+2.【simple-markdown：更轻量级的 Markdown 解析器】，解析器，是什么？相比于自己写解析逻辑，好处在哪？或者说我们为什么需要？以及，这一个解析器是最适合我们这一项目的吗？可能的风险是什么？
+
+3. 结合preview文件具体情况，分析如何【结合此解析器，达成最小化实现，做到简洁、高效、强大】。也就是怎么来做？

@@ -4,6 +4,42 @@
 
 
 
+##  3.18
+
+
+（没说明白，感觉可以混搭）
+“Use # followed by a filename to focus on specific files. 
+Combine this with @ symbols for precise context control.”
+
+
+“In order to make sure the file you’re referencing is the correct file, 
+Cursor will show a preview of the file’s path. 
+This is especially useful when you have multiple files with the same name in different folders.”
+
+“Drag and Drop：
+You can drag and drop files from the primary sidebar into Composer, Chat or Cmd K to add them as context.”
+
+
+“This can be useful to allow Cursor to find the most up-to-date information online, 
+or to allow Cursor to scrape multiple websites in a few seconds to find the best answer, 
+without the user having to manually search anywhere.
+When using Agent mode, 
+Cursor will automatically search the web when it needs up-to-date information or additional context.”
+
+
+
+（MCP，没懂）
+
+“What is MCP?
+The Model Context Protocol (MCP) is an open protocol that standardizes how applications provide context and tools to LLMs. 
+Think of MCP as a plugin system for Cursor - 
+it allows you to extend the Agent’s capabilities by connecting it to various data sources and tools through standardized interfaces.
+
+Uses
+MCP allows you to connect Cursor to external systems and data sources. 
+This means you can integrate Cursor with your existing tools and infrastructure, instead of having to tell Cursor what the structure of your project is outside of the code itself.”
+
+
 ## 3.16
 
 模仿图片中的样式，优化preview页面。

@@ -3,6 +3,8 @@
 可以类比为：食材处理：将原料切配成可以直接烹饪的状态；乐谱转换：将五线谱转换为简谱
 
 
+
+
 2.
 Markdown解析器：
 解析器（Parser）是一种程序或组件，用于将输入的文本（如代码、Markdown、JSON 等）转换为一种结构化的数据形式（如树形结构、对象等），以便后续处理。
@@ -133,6 +135,25 @@ console.log(ast);
 
 
 
+5. interface
+
+
+(3) interface 的作用
+定义数据结构：
+interface 用于定义 Markdown 节点的数据结构，确保类型安全。
+例如，IMarkdownNode 定义了节点的类型、内容、子节点等属性。
+
+(4) 为什么要设置节点类型？
+结构化数据：
+Markdown 解析后的 AST 是一个树形结构，节点类型用于表示不同的语法单元（如标题、段落、列表等）。
+
+便于后续处理：
+通过明确的节点类型，可以方便地遍历和渲染 AST。
+
+(5) this.mdParser 是否多此一举？
+不完全是：
+this.mdParser 是对 simple-markdown 解析器的引用，便于后续扩展和替换解析逻辑。
+如果直接调用 SimpleMarkdown.defaultBlockParse，代码会更简洁，但灵活性会降低。
 
 
 

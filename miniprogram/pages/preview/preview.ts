@@ -8,18 +8,36 @@ declare module '@khanacademy/simple-markdown' {
   export const defaultRules: any;
 }
 
-import SimpleMarkdown from '@khanacademy/simple-markdown';
-
-// 定义 Markdown 节点类型
-interface IMarkdownNode {
-  type: string;
-  content?: string | IMarkdownNode[];
-  items?: IMarkdownNode[][];
-  level?: number;
-  target?: string;
-  title?: string;
-  alt?: string;
+declare interface TextMetrics {
+  width: number;
 }
+
+declare interface CanvasRenderingContext2D {
+  font: string;
+  fillStyle: string | any;
+  strokeStyle: string | any;
+  lineWidth: number;
+  measureText(text: string): TextMetrics;
+  fillText(text: string, x: number, y: number, maxWidth?: number): void;
+  fillRect(x: number, y: number, width: number, height: number): void;
+  beginPath(): void;
+  moveTo(x: number, y: number): void;
+  lineTo(x: number, y: number): void;
+  quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): void;
+  closePath(): void;
+  fill(): void;
+  stroke(): void;
+  clearRect(x: number, y: number, width: number, height: number): void;
+  scale(x: number, y: number): void;
+  shadowColor?: string;
+  shadowBlur?: number;
+  shadowOffsetX?: number;
+  shadowOffsetY?: number;
+}
+
+import SimpleMarkdown from '@khanacademy/simple-markdown';
+import { CanvasRenderUtils } from '../../utils/renderUtils';
+import { MarkdownRenderer, IMarkdownNode, defaultMarkdownStyles, RenderContext } from '../../utils/markdownRenderer';
 
 interface IPageData {
   questionContent: string;
@@ -30,9 +48,52 @@ interface IPageData {
   currentTemplate: string;
   parsedQuestion: IMarkdownNode[];
   parsedAnswer: IMarkdownNode[];
+  isRendering: boolean;
+  renderProgress: number;
 }
 
 type CanvasContext = WechatMiniprogram.CanvasContext;
+
+// 定义模板样式
+interface TemplateStyle {
+  backgroundColor: string;
+  contentBackgroundColor: string;
+  titleColor: string;
+  watermarkColor: string;
+  padding: number;
+}
+
+// 模板样式集合
+const templateStyles: {[key: string]: TemplateStyle} = {
+  default: {
+    backgroundColor: '#000000',
+    contentBackgroundColor: '#1a1a1a',
+    titleColor: '#ffffff',
+    watermarkColor: 'rgba(255, 255, 255, 0.1)',
+    padding: 20
+  },
+  simple: {
+    backgroundColor: '#ffffff',
+    contentBackgroundColor: '#f5f5f5',
+    titleColor: '#333333',
+    watermarkColor: 'rgba(0, 0, 0, 0.1)',
+    padding: 30
+  },
+  book: {
+    backgroundColor: '#f8f4e5',
+    contentBackgroundColor: '#ffffff',
+    titleColor: '#5d4037',
+    watermarkColor: 'rgba(93, 64, 55, 0.1)',
+    padding: 40
+  },
+  dialog: {
+    backgroundColor: '#121212',
+    contentBackgroundColor: '#1e1e1e',
+    titleColor: '#4080ff',
+    watermarkColor: 'rgba(64, 128, 255, 0.1)',
+    padding: 15
+  }
+};
 
 // 使用无泛型参数的 Page 定义，避免类型错误
 Page({
@@ -43,12 +104,16 @@ Page({
     canvasWidth: 0,
     canvasHeight: 0,
     currentTemplate: 'default', // 当前使用的模板
-    parsedQuestion: [],
-    parsedAnswer: []
-  },
+    parsedQuestion: [] as IMarkdownNode[],
+    parsedAnswer: [] as IMarkdownNode[],
+    isRendering: false,
+    renderProgress: 0
+  } as IPageData,
 
   // 创建 Markdown 解析器
   mdParser: null as any,
+  canvasNode: null as any,
+  canvasContext: null as any,
 
   onLoad(options?: Record<string, string | undefined>) {
     if (!options) return;
@@ -60,7 +125,7 @@ Page({
     this.parseContent(options);
     
     // 初始化画布尺寸
-    this.initCanvasSize();         //取名字是真草率 
+    this.initCanvasSize();
   },
 
   /**
@@ -100,7 +165,7 @@ Page({
     if (!content) return [];
     
     try {
-      // 添加换行符，确保解析为块级内容                        // 是的，一行完成；果真是细节全封装
+      // 添加换行符，确保解析为块级内容
       return this.mdParser(content + '\n\n');
     } catch (error) {
       console.error('Markdown 解析错误:', error);
@@ -122,7 +187,7 @@ Page({
       success: (res) => {
         this.setData({
           canvasWidth: res.windowWidth,
-          canvasHeight: res.windowHeight
+          canvasHeight: res.windowHeight * 0.7 // 设置为屏幕高度的70%，避免太长
         }, () => {
           // 初始化完成后渲染画布
           this.renderToCanvas();
@@ -135,369 +200,527 @@ Page({
    * 渲染内容到画布
    */
   async renderToCanvas() {
-    const query = wx.createSelectorQuery();
-    const canvas = await new Promise<WechatMiniprogram.Canvas>(resolve => {
+    try {
+      this.setData({ isRendering: true, renderProgress: 0 });
+      
+      // 获取Canvas节点
+      this.canvasNode = await this.getCanvasNode();
+      if (!this.canvasNode) {
+        throw new Error('无法获取Canvas节点');
+      }
+      
+      this.canvasContext = this.canvasNode.getContext('2d');
+      
+      // 设置Canvas尺寸（高清显示）
+      const dpr = wx.getSystemInfoSync().pixelRatio;
+      this.canvasNode.width = this.data.canvasWidth * dpr;
+      this.canvasNode.height = this.data.canvasHeight * dpr;
+      this.canvasContext.scale(dpr, dpr);
+      
+      // 渲染前先计算内容高度
+      const contentHeight = await this.calculateContentHeight();
+      
+      // 如果内容高度超过Canvas高度，则更新Canvas高度
+      if (contentHeight > this.data.canvasHeight) {
+        this.canvasNode.height = contentHeight * dpr;
+        this.canvasContext.scale(dpr, dpr);
+        this.setData({ canvasHeight: contentHeight });
+      }
+      
+      this.setData({ renderProgress: 30 });
+      
+      // 根据当前模板渲染内容
+      await this.renderTemplate();
+      
+      this.setData({ isRendering: false, renderProgress: 100 });
+    } catch (error) {
+      console.error('渲染失败:', error);
+      wx.showToast({
+        title: '渲染失败，请重试',
+        icon: 'none'
+      });
+      this.setData({ isRendering: false });
+    }
+  },
+
+  /**
+   * 获取Canvas节点
+   */
+  async getCanvasNode(): Promise<WechatMiniprogram.Canvas> {
+    return new Promise((resolve, reject) => {
+      const query = wx.createSelectorQuery();
       query.select('#previewCanvas')
         .fields({ node: true, size: true })
-        .exec((res) => resolve(res[0].node));
+        .exec((res) => {
+          if (res && res[0] && res[0].node) {
+            resolve(res[0].node);
+          } else {
+            reject(new Error('获取Canvas节点失败'));
+          }
+        });
     });
+  },
 
-    const ctx = canvas.getContext('2d');
+  /**
+   * 计算内容所需的总高度
+   */
+  async calculateContentHeight(): Promise<number> {
+    // 创建离屏Canvas用于测量
+    // 使用wx的API直接创建离屏Canvas
+    let offscreenCanvas: any = null;
+    let ctx: any = null;
     
-    // 设置画布尺寸（高清显示）
-    const dpr = wx.getSystemInfoSync().pixelRatio;
-    canvas.width = this.data.canvasWidth * dpr;
-    canvas.height = this.data.canvasHeight * dpr;
-    ctx.scale(dpr, dpr);
-
-    // 根据当前模板渲染内容
-    await this.renderTemplate(ctx);
+    try {
+      if (typeof wx !== 'undefined' && wx.createOffscreenCanvas) {
+        offscreenCanvas = wx.createOffscreenCanvas();
+        offscreenCanvas.width = this.data.canvasWidth;
+        offscreenCanvas.height = 1000;
+        ctx = offscreenCanvas.getContext('2d');
+      }
+    } catch (error) {
+      console.error('创建离屏Canvas失败:', error);
+    }
+    
+    if (!ctx) return this.data.canvasHeight;
+    
+    const style = templateStyles[this.data.currentTemplate];
+    const padding = style.padding;
+    const contentWidth = this.data.canvasWidth - (padding * 2);
+    
+    // 标题和间距的高度
+    let totalHeight = 60; // 顶部空间
+    
+    // 问题标题
+    totalHeight += 30;
+    
+    // 计算问题内容高度
+    totalHeight = CanvasRenderUtils.calculateContentHeight(
+      ctx,
+      this.data.parsedQuestion,
+      padding + 10,
+      totalHeight,
+      contentWidth - 20,
+      '14px sans-serif'
+    );
+    
+    // 回答标题
+    totalHeight += 30;
+    
+    // 计算回答内容高度
+    totalHeight = CanvasRenderUtils.calculateContentHeight(
+      ctx,
+      this.data.parsedAnswer,
+      padding + 10,
+      totalHeight,
+      contentWidth - 20,
+      '14px sans-serif'
+    );
+    
+    // 底部空间
+    totalHeight += 60;
+    
+    return Math.max(totalHeight, this.data.canvasHeight);
   },
 
   /**
    * 根据模板渲染内容
    */
-  async renderTemplate(ctx: any) {
+  async renderTemplate() {
+    if (!this.canvasContext) return;
+    
     // 清空画布
-    ctx.clearRect(0, 0, this.data.canvasWidth, this.data.canvasHeight);
-
+    this.canvasContext.clearRect(0, 0, this.data.canvasWidth, this.data.canvasHeight);
+    
     switch (this.data.currentTemplate) {
       case 'simple':
-        await this.renderSimpleTemplate(ctx);
+        await this.renderSimpleTemplate();
         break;
       case 'book':
-        await this.renderBookTemplate(ctx);
+        await this.renderBookTemplate();
         break;
       case 'dialog':
-        await this.renderDialogTemplate(ctx);
+        await this.renderDialogTemplate();
         break;
       default:
-        await this.renderDefaultTemplate(ctx);
+        await this.renderDefaultTemplate();
     }
+
+    this.setData({ renderProgress: 90 });
   },
 
   /**
    * 渲染默认模板
    */
-  async renderDefaultTemplate(ctx: any) {
+  async renderDefaultTemplate() {
+    if (!this.canvasContext) return;
+    const ctx = this.canvasContext;
+    
+    const style = templateStyles.default;
+    const contentPadding = style.padding;
+    const contentWidth = this.data.canvasWidth - (contentPadding * 2);
+    
     // 绘制背景
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = style.backgroundColor;
     ctx.fillRect(0, 0, this.data.canvasWidth, this.data.canvasHeight);
     
     // 绘制内容区域
-    ctx.fillStyle = '#1a1a1a';
-    const contentPadding = 20;
-    const contentWidth = this.data.canvasWidth - (contentPadding * 2);
+    ctx.fillStyle = style.contentBackgroundColor;
     ctx.fillRect(contentPadding, 60, contentWidth, this.data.canvasHeight - 120);
-
+    
     // 绘制标题
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = style.titleColor;
     ctx.font = 'bold 24px sans-serif';
     ctx.fillText('文图', 20, 40);
-
+    
+    // 创建渲染上下文
+    const renderContext: RenderContext = {
+      ctx,
+      x: contentPadding + 10,
+      y: 90,
+      maxWidth: contentWidth - 20,
+      baseStyles: defaultMarkdownStyles
+    };
+    
     // 绘制问题部分
-    let currentY = 90;
     ctx.fillStyle = '#4080ff';
     ctx.font = '16px sans-serif';
-    ctx.fillText('问题', contentPadding + 10, currentY);
+    ctx.fillText('问题', contentPadding + 10, renderContext.y);
     
-    currentY += 30;
+    renderContext.y += 30;
     
     // 渲染解析后的问题内容
-    currentY = await this.renderMarkdownNodes(
-      ctx, 
-      this.data.parsedQuestion, 
-      contentPadding + 10, 
-      currentY, 
-      contentWidth - 20
+    renderContext.y = await MarkdownRenderer.renderNodes(
+      renderContext,
+      this.data.parsedQuestion
     );
-
+    
     // 绘制回答部分
-    currentY += 30;
+    renderContext.y += 30;
     ctx.fillStyle = '#4080ff';
     ctx.font = '16px sans-serif';
-    ctx.fillText('回答', contentPadding + 10, currentY);
+    ctx.fillText('回答', contentPadding + 10, renderContext.y);
     
-    currentY += 30;
+    renderContext.y += 30;
     
     // 渲染解析后的回答内容
-    currentY = await this.renderMarkdownNodes(
-      ctx, 
-      this.data.parsedAnswer, 
-      contentPadding + 10, 
-      currentY, 
-      contentWidth - 20
+    renderContext.y = await MarkdownRenderer.renderNodes(
+      renderContext,
+      this.data.parsedAnswer
     );
-
+    
     // 绘制水印
     if (this.data.showWatermark) {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.fillStyle = style.watermarkColor;
       ctx.font = '12px sans-serif';
       ctx.fillText('由文图小程序生成', this.data.canvasWidth - 150, this.data.canvasHeight - 30);
     }
   },
 
   /**
-   * 渲染 Markdown 节点集合
+   * 渲染简约模板
    */
-  async renderMarkdownNodes(
-    ctx: any, 
-    nodes: IMarkdownNode[], 
-    x: number, 
-    y: number, 
-    maxWidth: number
-  ): Promise<number> {
-    let currentY = y;
+  async renderSimpleTemplate() {
+    if (!this.canvasContext) return;
+    const ctx = this.canvasContext;
     
-    for (const node of nodes) {
-      currentY = await this.renderMarkdownNode(ctx, node, x, currentY, maxWidth);
-      // 添加节点间距
-      currentY += 10;
+    const style = templateStyles.simple;
+    const contentPadding = style.padding;
+    const contentWidth = this.data.canvasWidth - (contentPadding * 2);
+    
+    // 绘制背景
+    ctx.fillStyle = style.backgroundColor;
+    ctx.fillRect(0, 0, this.data.canvasWidth, this.data.canvasHeight);
+    
+    // 绘制内容区域
+    ctx.fillStyle = style.contentBackgroundColor;
+    ctx.fillRect(contentPadding, 60, contentWidth, this.data.canvasHeight - 120);
+    
+    // 绘制标题
+    ctx.fillStyle = style.titleColor;
+    ctx.font = 'bold 24px sans-serif';
+    ctx.fillText('文图', 30, 40);
+    
+    // 创建简约风格的样式
+    const simpleStyles = JSON.parse(JSON.stringify(defaultMarkdownStyles));
+    simpleStyles.text.color = '#333333';
+    simpleStyles.heading.forEach((h: any) => h.color = '#333333');
+    
+    // 创建渲染上下文
+    const renderContext: RenderContext = {
+      ctx,
+      x: contentPadding + 20,
+      y: 100,
+      maxWidth: contentWidth - 40,
+      baseStyles: simpleStyles
+    };
+    
+    // 渲染问题标题
+    ctx.fillStyle = '#4080ff';
+    ctx.font = '18px sans-serif';
+    ctx.fillText('问题', contentPadding + 20, 80);
+    
+    // 渲染解析后的问题内容
+    renderContext.y = await MarkdownRenderer.renderNodes(
+      renderContext,
+      this.data.parsedQuestion
+    );
+    
+    // 渲染回答标题
+    renderContext.y += 20;
+    ctx.fillStyle = '#4080ff';
+    ctx.font = '18px sans-serif';
+    ctx.fillText('回答', contentPadding + 20, renderContext.y);
+    
+    renderContext.y += 30;
+    
+    // 渲染解析后的回答内容
+    renderContext.y = await MarkdownRenderer.renderNodes(
+      renderContext,
+      this.data.parsedAnswer
+    );
+    
+    // 绘制水印
+    if (this.data.showWatermark) {
+      ctx.fillStyle = style.watermarkColor;
+      ctx.font = '12px sans-serif';
+      ctx.fillText('由文图小程序生成', this.data.canvasWidth - 150, this.data.canvasHeight - 30);
     }
-    
-    return currentY;
   },
 
   /**
-   * 渲染单个 Markdown 节点
+   * 渲染书籍模板
    */
-  async renderMarkdownNode(
-    ctx: any, 
-    node: IMarkdownNode, 
-    x: number, 
-    y: number, 
-    maxWidth: number
-  ): Promise<number> {
-    let currentY = y;
+  async renderBookTemplate() {
+    if (!this.canvasContext) return;
+    const ctx = this.canvasContext;
     
-    switch (node.type) {
-      case 'heading':
-        currentY = this.renderHeading(ctx, node, x, currentY, maxWidth);
-        break;
-        
-      case 'paragraph':
-        currentY = this.renderParagraph(ctx, node, x, currentY, maxWidth);
-        break;
-        
-      case 'hr':
-        currentY = this.renderHorizontalRule(ctx, x, currentY, maxWidth);
-        break;
-        
-      case 'list':
-        currentY = this.renderList(ctx, node, x, currentY, maxWidth);
-        break;
-        
-      case 'text':
-        if (typeof node.content === 'string') {
-          ctx.fillStyle = '#ffffff';
-          ctx.font = '14px sans-serif';
-          currentY = this.drawWrappedText(ctx, node.content, x, currentY, maxWidth);
-        }
-        break;
-        
-      default:
-        console.warn('不支持的节点类型:', node.type);
-        break;
-    }
+    const style = templateStyles.book;
+    const contentPadding = style.padding;
+    const contentWidth = this.data.canvasWidth - (contentPadding * 2);
     
-    return currentY;
-  },
-
-  /**
-   * 渲染标题
-   */
-  renderHeading(
-    ctx: any, 
-    node: IMarkdownNode, 
-    x: number, 
-    y: number, 
-    maxWidth: number
-  ): number {
-    const level = node.level || 1;
-    const fontSize = 24 - (level - 1) * 2;
+    // 绘制背景（仿纸张质感）
+    ctx.fillStyle = style.backgroundColor;
+    ctx.fillRect(0, 0, this.data.canvasWidth, this.data.canvasHeight);
     
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${fontSize}px sans-serif`;
+    // 绘制内容区域（白色纸张）
+    ctx.fillStyle = style.contentBackgroundColor;
     
-    let currentY = y + fontSize; // 根据字体大小调整起始位置
+    // 添加纸张阴影效果
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetX = 5;
+    ctx.shadowOffsetY = 5;
     
-    if (Array.isArray(node.content)) {
-      for (const childNode of node.content) {
-        if (childNode.type === 'text' && typeof childNode.content === 'string') {
-          currentY = this.drawWrappedText(ctx, childNode.content, x, currentY, maxWidth);
-        }
-      }
-    }
+    ctx.fillRect(contentPadding, 60, contentWidth, this.data.canvasHeight - 120);
     
-    return currentY + 10; // 增加标题底部间距
-  },
-
-  /**
-   * 渲染段落
-   */
-  renderParagraph(
-    ctx: any, 
-    node: IMarkdownNode, 
-    x: number, 
-    y: number, 
-    maxWidth: number
-  ): number {
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '14px sans-serif';
+    // 重置阴影
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
     
-    let currentY = y;
+    // 绘制标题（仿印刷风格）
+    ctx.fillStyle = style.titleColor;
+    ctx.font = 'bold 28px serif';
+    ctx.fillText('文图', contentPadding + 20, 40);
     
-    if (Array.isArray(node.content)) {
-      for (const childNode of node.content) {
-        if (childNode.type === 'text' && typeof childNode.content === 'string') {
-          currentY = this.drawWrappedText(ctx, childNode.content, x, currentY, maxWidth);
-        } else if (childNode.type === 'strong') {
-          ctx.font = 'bold 14px sans-serif';
-          currentY = this.renderStrongText(ctx, childNode, x, currentY, maxWidth);
-          ctx.font = '14px sans-serif'; // 恢复默认字体
-        } else if (childNode.type === 'em') {
-          ctx.font = 'italic 14px sans-serif';
-          currentY = this.renderEmphasisText(ctx, childNode, x, currentY, maxWidth);
-          ctx.font = '14px sans-serif'; // 恢复默认字体
-        }
-      }
-    }
+    // 创建书籍风格的样式
+    const bookStyles = JSON.parse(JSON.stringify(defaultMarkdownStyles));
+    bookStyles.text.color = '#333333';
+    bookStyles.text.font = '15px serif';
+    bookStyles.heading.forEach((h: any, i: number) => {
+      h.color = '#5d4037';
+      h.font = `bold ${24-i*2}px serif`;
+    });
     
-    return currentY;
-  },
-
-  /**
-   * 渲染粗体文本
-   */
-  renderStrongText(
-    ctx: any, 
-    node: IMarkdownNode, 
-    x: number, 
-    y: number, 
-    maxWidth: number
-  ): number {
-    let currentY = y;
+    // 创建渲染上下文
+    const renderContext: RenderContext = {
+      ctx,
+      x: contentPadding + 30,
+      y: 100,
+      maxWidth: contentWidth - 60,
+      baseStyles: bookStyles
+    };
     
-    if (Array.isArray(node.content)) {
-      for (const childNode of node.content) {
-        if (childNode.type === 'text' && typeof childNode.content === 'string') {
-          currentY = this.drawWrappedText(ctx, childNode.content, x, currentY, maxWidth);
-        }
-      }
-    }
+    // 渲染问题标题（仿章节标题）
+    ctx.fillStyle = '#5d4037';
+    ctx.font = 'bold 20px serif';
+    ctx.fillText('问题', contentPadding + 30, 80);
     
-    return currentY;
-  },
-
-  /**
-   * 渲染斜体文本
-   */
-  renderEmphasisText(
-    ctx: any, 
-    node: IMarkdownNode, 
-    x: number, 
-    y: number, 
-    maxWidth: number
-  ): number {
-    let currentY = y;
-    
-    if (Array.isArray(node.content)) {
-      for (const childNode of node.content) {
-        if (childNode.type === 'text' && typeof childNode.content === 'string') {
-          currentY = this.drawWrappedText(ctx, childNode.content, x, currentY, maxWidth);
-        }
-      }
-    }
-    
-    return currentY;
-  },
-
-  /**
-   * 渲染水平分隔线
-   */
-  renderHorizontalRule(
-    ctx: any, 
-    x: number, 
-    y: number, 
-    maxWidth: number
-  ): number {
-    const lineY = y + 10;
-    
-    ctx.strokeStyle = '#555555';
+    // 绘制分隔线
+    ctx.strokeStyle = '#5d4037';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(x, lineY);
-    ctx.lineTo(x + maxWidth, lineY);
+    ctx.moveTo(contentPadding + 30, 85);
+    ctx.lineTo(contentPadding + 80, 85);
     ctx.stroke();
     
-    return lineY + 10;
+    // 渲染解析后的问题内容
+    renderContext.y = await MarkdownRenderer.renderNodes(
+      renderContext,
+      this.data.parsedQuestion
+    );
+    
+    // 渲染回答标题
+    renderContext.y += 20;
+    ctx.fillStyle = '#5d4037';
+    ctx.font = 'bold 20px serif';
+    ctx.fillText('回答', contentPadding + 30, renderContext.y);
+    
+    // 绘制分隔线
+    ctx.beginPath();
+    ctx.moveTo(contentPadding + 30, renderContext.y + 5);
+    ctx.lineTo(contentPadding + 80, renderContext.y + 5);
+    ctx.stroke();
+    
+    renderContext.y += 30;
+    
+    // 渲染解析后的回答内容
+    renderContext.y = await MarkdownRenderer.renderNodes(
+      renderContext,
+      this.data.parsedAnswer
+    );
+    
+    // 绘制水印
+    if (this.data.showWatermark) {
+      ctx.fillStyle = style.watermarkColor;
+      ctx.font = 'italic 12px serif';
+      ctx.fillText('由文图小程序生成', this.data.canvasWidth - 150, this.data.canvasHeight - 30);
+    }
   },
 
   /**
-   * 渲染列表
+   * 渲染对话模板
    */
-  renderList(
-    ctx: any, 
-    node: IMarkdownNode, 
-    x: number, 
-    y: number, 
-    maxWidth: number
-  ): number {
-    let currentY = y;
-    const indent = 20; // 列表缩进
+  async renderDialogTemplate() {
+    if (!this.canvasContext) return;
+    const ctx = this.canvasContext;
     
-    if (node.items && Array.isArray(node.items)) {
-      let itemIndex = 1;
-      
-      for (const item of node.items) {
-        // 绘制列表标记
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '14px sans-serif';
-        ctx.fillText('•', x, currentY + 14);
-        
-        // 渲染列表项内容
-        if (Array.isArray(item)) {
-          for (const contentNode of item) {
-            currentY = this.renderMarkdownNode(ctx, contentNode, x + indent, currentY, maxWidth - indent);
-          }
-        }
-        
-        currentY += 10; // 列表项间距
-        itemIndex++;
-      }
+    const style = templateStyles.dialog;
+    const contentPadding = style.padding;
+    const contentWidth = this.data.canvasWidth - (contentPadding * 2);
+    
+    // 绘制背景
+    ctx.fillStyle = style.backgroundColor;
+    ctx.fillRect(0, 0, this.data.canvasWidth, this.data.canvasHeight);
+    
+    // 绘制标题栏
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(0, 0, this.data.canvasWidth, 50);
+    
+    // 绘制标题
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 18px sans-serif';
+    ctx.fillText('文图对话', this.data.canvasWidth / 2 - 30, 30);
+    
+    // 创建对话风格的样式
+    const dialogStyles = JSON.parse(JSON.stringify(defaultMarkdownStyles));
+    dialogStyles.text.color = '#ffffff';
+    
+    // 创建渲染上下文
+    const renderContext: RenderContext = {
+      ctx,
+      x: 0,
+      y: 80,
+      maxWidth: 0, // 将在每个消息气泡中设置
+      baseStyles: dialogStyles
+    };
+    
+    // 渲染问题（左侧气泡）
+    const questionBubbleWidth = this.data.canvasWidth * 0.7;
+    
+    // 绘制问题气泡
+    ctx.fillStyle = '#333333';
+    this.drawBubble(ctx, 15, renderContext.y, questionBubbleWidth, 'left');
+    
+    // 设置问题内容的渲染区域
+    renderContext.x = 25;
+    renderContext.maxWidth = questionBubbleWidth - 20;
+    
+    // 渲染解析后的问题内容
+    renderContext.y = await MarkdownRenderer.renderNodes(
+      renderContext,
+      this.data.parsedQuestion
+    );
+    
+    renderContext.y += 30;
+    
+    // 渲染回答（右侧气泡）
+    const answerBubbleWidth = this.data.canvasWidth * 0.7;
+    
+    // 绘制回答气泡
+    ctx.fillStyle = '#4080ff';
+    this.drawBubble(ctx, this.data.canvasWidth - 15 - answerBubbleWidth, renderContext.y, answerBubbleWidth, 'right');
+    
+    // 设置回答内容的渲染区域
+    renderContext.x = this.data.canvasWidth - 15 - answerBubbleWidth + 10;
+    renderContext.maxWidth = answerBubbleWidth - 20;
+    
+    // 渲染解析后的回答内容
+    renderContext.y = await MarkdownRenderer.renderNodes(
+      renderContext,
+      this.data.parsedAnswer
+    );
+    
+    // 绘制水印
+    if (this.data.showWatermark) {
+      ctx.fillStyle = style.watermarkColor;
+      ctx.font = '12px sans-serif';
+      ctx.fillText('由文图小程序生成', this.data.canvasWidth - 150, this.data.canvasHeight - 30);
     }
-    
-    return currentY;
   },
 
   /**
-   * 绘制自动换行的文本，返回最后一行的Y坐标
+   * 绘制聊天气泡
    */
-  drawWrappedText(ctx: any, text: string, x: number, y: number, maxWidth: number): number {
-    const lineHeight = 24;
-    const chars = text.split('');
-    let line = '';
-    let currentY = y;
-
-    for (const char of chars) {
-      const testLine = line + char;
-      const metrics = ctx.measureText(testLine);
-      
-      if (metrics.width > maxWidth && line.length > 0) {
-        ctx.fillText(line, x, currentY);
-        line = char;
-        currentY += lineHeight;
-      } else {
-        line = testLine;
-      }
+  drawBubble(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, direction: 'left' | 'right') {
+    const height = 100; // 初始高度，会根据内容动态调整
+    const radius = 10;
+    
+    ctx.beginPath();
+    
+    // 左上角
+    ctx.moveTo(x + radius, y);
+    
+    // 上边
+    ctx.lineTo(x + width - radius, y);
+    
+    // 右上角
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    
+    // 右边
+    ctx.lineTo(x + width, y + height - radius);
+    
+    // 右下角
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    
+    // 下边
+    ctx.lineTo(x + radius, y + height);
+    
+    // 左下角
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    
+    // 左边
+    ctx.lineTo(x, y + radius);
+    
+    // 左上角
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    
+    // 绘制尖角
+    if (direction === 'left') {
+      // 左侧气泡，尖角在左边
+      ctx.moveTo(x, y + 20);
+      ctx.lineTo(x - 10, y + 30);
+      ctx.lineTo(x, y + 40);
+    } else {
+      // 右侧气泡，尖角在右边
+      ctx.moveTo(x + width, y + 20);
+      ctx.lineTo(x + width + 10, y + 30);
+      ctx.lineTo(x + width, y + 40);
     }
     
-    if (line.length > 0) {
-      ctx.fillText(line, x, currentY);
-      currentY += lineHeight;
-    }
-
-    return currentY;
+    ctx.closePath();
+    ctx.fill();
   },
 
   /**
@@ -514,7 +737,7 @@ Page({
       // 生成临时文件路径
       const tempFilePath = await new Promise<string>((resolve, reject) => {
         wx.canvasToTempFilePath({
-          canvas: wx.createSelectorQuery().select('#previewCanvas').node(),
+          canvas: this.canvasNode,
           success: res => resolve(res.tempFilePath),
           fail: reject
         });
@@ -565,5 +788,31 @@ Page({
    */
   saveImage() {
     this.exportImage();
+  },
+
+  /**
+   * 分享给好友
+   */
+  shareToFriends() {
+    // 小程序内分享逻辑，使用开放能力
+    wx.showToast({ title: '请使用右上角分享按钮', icon: 'none' });
+  },
+
+  /**
+   * 分享到朋友圈
+   */
+  shareToMoments() {
+    // 调用分享海报图片的逻辑
+    this.exportImage();
+    wx.showToast({ title: '图片已保存，可分享到朋友圈', icon: 'none' });
+  },
+
+  /**
+   * 分享到其他平台
+   */
+  shareToOther() {
+    // 导出图片后引导用户分享
+    this.exportImage();
+    wx.showToast({ title: '图片已保存，可分享到其他平台', icon: 'none' });
   }
 }); 

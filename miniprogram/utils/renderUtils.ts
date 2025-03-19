@@ -16,47 +16,9 @@
  * 
  */
 
-
-
-// 为小程序环境声明Canvas相关类型
-
-declare global {
-  interface TextMetrics {
-    width: number;
-    actualBoundingBoxAscent?: number;
-    actualBoundingBoxDescent?: number;
-    actualBoundingBoxLeft?: number;
-    actualBoundingBoxRight?: number;
-    fontBoundingBoxAscent?: number;
-    fontBoundingBoxDescent?: number;
-  }
-
-  // 声明Canvas相关的类型
-  interface CanvasGradient {
-    addColorStop(offset: number, color: string): void;
-  }
-
-  interface CanvasPattern { }
-
-  interface CanvasRenderingContext2D {
-    font: string;
-    fillStyle: string | CanvasGradient | CanvasPattern;
-    strokeStyle: string | CanvasGradient | CanvasPattern;
-    lineWidth: number;
-    measureText(text: string): TextMetrics;
-    fillText(text: string, x: number, y: number, maxWidth?: number): void;
-    fillRect(x: number, y: number, width: number, height: number): void;
-    beginPath(): void;
-    moveTo(x: number, y: number): void;
-    lineTo(x: number, y: number): void;
-    stroke(): void;
-    clearRect(x: number, y: number, width: number, height: number): void;
-    scale(x: number, y: number): void;
-  }
-}
-
-// 使用小程序的API替代requestAnimationFrame
-declare function requestAnimationFrame(callback: () => void): number;
+// 导入全局类型定义
+import '../utils/types';
+import { IMarkdownNode } from './markdownRenderer';
 
 // 文本缓存接口
 interface TextMetricsCache {
@@ -224,65 +186,252 @@ export class CanvasRenderUtils {
    */
   public static calculateContentHeight(
     ctx: CanvasRenderingContext2D,
-    nodes: any[],
+    nodes: IMarkdownNode[],
     x: number,
     y: number,
     maxWidth: number,
-    defaultFont: string
+    font?: string
   ): number {
-    let maxHeight = y;
-    const originalFont = ctx.font;
+    if (font) {
+      ctx.font = font;
+    }
     
-    const estimateNodeHeight = (node: any, startY: number): number => {
-      let nodeHeight = startY;
-      
+    let currentY = y;
+    
+    for (const node of nodes) {
       switch (node.type) {
         case 'paragraph':
-          if (Array.isArray(node.content)) {
-            let text = '';
-            // 简单处理：将所有文本节点合并
-            node.content.forEach((child: any) => {
-              if (child.type === 'text' && typeof child.content === 'string') {
-                text += child.content;
+          if (node.content && Array.isArray(node.content)) {
+            for (const item of node.content) {
+              if (typeof item === 'object' && item.type === 'text' && typeof item.content === 'string') {
+                // 模拟绘制文本计算高度
+                currentY = this.calculateTextHeight(
+                  ctx,
+                  item.content,
+                  x,
+                  currentY,
+                  maxWidth,
+                  24 // 默认行高
+                );
               }
-            });
-            
-            // 估算所需行数
-            const lines = this.calculateTextWrapping(ctx, text, x, startY, maxWidth, 24, defaultFont);
-            nodeHeight = lines[lines.length - 1]?.y + 24 || nodeHeight;
+            }
+            currentY += 16; // 段落间距
           }
           break;
           
         case 'heading':
-          nodeHeight += 50; // 标题估算高度
+          // 标题高度估算
+          const headingLevel = node.level || 1;
+          const headingSize = 24 - (headingLevel - 1) * 2;
+          currentY += headingSize + 16;
           break;
           
         case 'list':
+          // 列表项高度估算
           if (node.items && Array.isArray(node.items)) {
-            nodeHeight += node.items.length * 34; // 每个列表项估算高度
+            for (const item of node.items) {
+              if (item.content && Array.isArray(item.content)) {
+                for (const contentItem of item.content) {
+                  if (typeof contentItem === 'object' && contentItem.type === 'text' && typeof contentItem.content === 'string') {
+                    currentY = this.calculateTextHeight(
+                      ctx,
+                      contentItem.content,
+                      x + 20, // 缩进
+                      currentY,
+                      maxWidth - 20,
+                      20
+                    );
+                  }
+                }
+              }
+              currentY += 10; // 列表项间距
+            }
+          }
+          currentY += 10; // 列表底部间距
+          break;
+          
+        case 'codeBlock':
+          // 代码块高度估算
+          if (typeof node.content === 'string') {
+            const codeLines = node.content.split('\n');
+            currentY += 10; // 顶部间距
+            currentY += codeLines.length * 20; // 代码行高
+            currentY += 10; // 底部间距
           }
           break;
           
-        case 'hr':
-          nodeHeight += 30; // 分隔线高度
-          break;
-          
         default:
-          nodeHeight += 24; // 默认行高
+          currentY += 24; // 默认行高
       }
-      
-      return nodeHeight;
-    };
-    
-    // 遍历所有节点估算高度
-    for (const node of nodes) {
-      const nodeHeight = estimateNodeHeight(node, maxHeight);
-      maxHeight = Math.max(maxHeight, nodeHeight) + 10; // 添加节点间距
     }
     
-    ctx.font = originalFont;
+    return currentY;
+  }
+
+  /**
+   * 计算文本高度
+   * @param ctx Canvas上下文
+   * @param text 文本内容
+   * @param x X坐标
+   * @param y Y坐标
+   * @param maxWidth 最大宽度
+   * @param lineHeight 行高
+   * @returns 计算后的Y坐标
+   */
+  private static calculateTextHeight(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    x: number,
+    y: number,
+    maxWidth: number,
+    lineHeight: number
+  ): number {
+    if (!text) return y;
     
-    return maxHeight;
+    const words = text.split('');
+    let line = '';
+    let testLine = '';
+    let testWidth = 0;
+    let currentY = y;
+    
+    for (let n = 0; n < words.length; n++) {
+      testLine = line + words[n];
+      testWidth = ctx.measureText(testLine).width;
+      
+      if (testWidth > maxWidth && n > 0) {
+        line = words[n];
+        currentY += lineHeight;
+      } else {
+        line = testLine;
+      }
+    }
+    
+    return currentY + lineHeight;
+  }
+
+  /**
+   * 创建离屏Canvas用于双缓冲渲染
+   * @param width 宽度
+   * @param height 高度
+   * @returns 离屏Canvas上下文或null
+   */
+  static createOffscreenCanvas(width: number, height: number): { canvas: any, ctx: any } | null {
+    try {
+      if (typeof wx !== 'undefined' && wx.createOffscreenCanvas) {
+        // 微信小程序的createOffscreenCanvas参数不同
+        const canvas = wx.createOffscreenCanvas({
+          type: '2d',
+          width: width,
+          height: height
+        });
+        const ctx = canvas.getContext('2d');
+        return { canvas, ctx };
+      }
+    } catch (error) {
+      console.error('创建离屏Canvas失败:', error);
+    }
+    return null;
+  }
+  
+  /**
+   * 使用双缓冲技术渲染内容
+   * @param targetCtx 目标画布上下文
+   * @param width 宽度
+   * @param height 高度
+   * @param renderFunc 渲染函数
+   */
+  static async renderWithDoubleBuffering(
+    targetCtx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+    renderFunc: (ctx: CanvasRenderingContext2D) => Promise<void>
+  ): Promise<boolean> {
+    try {
+      // 创建离屏Canvas
+      const offscreen = this.createOffscreenCanvas(width, height);
+      
+      if (offscreen && offscreen.ctx) {
+        // 在离屏Canvas上渲染
+        await renderFunc(offscreen.ctx);
+        
+        // 将离屏内容一次性复制到目标Canvas
+        targetCtx.clearRect(0, 0, width, height);
+        
+        // 在微信小程序中，将离屏Canvas内容绘制到目标Canvas
+        if (offscreen.canvas && offscreen.canvas.width && offscreen.canvas.height) {
+          try {
+            // 使用drawImage将离屏Canvas绘制到目标Canvas
+            // @ts-ignore - 小程序的Canvas API与标准Canvas略有不同
+            targetCtx.drawImage(offscreen.canvas, 0, 0, width, height);
+            return true;
+          } catch (e) {
+            console.error('将离屏内容复制到目标Canvas失败:', e);
+            // 失败后使用直接渲染方法
+            targetCtx.clearRect(0, 0, width, height);
+            await renderFunc(targetCtx);
+          }
+        } else {
+          // 如果离屏Canvas没有大小，直接在目标Canvas上渲染
+          await renderFunc(targetCtx);
+        }
+        return true;
+      } else {
+        // 如果无法创建离屏Canvas，直接在目标Canvas上渲染
+        await renderFunc(targetCtx);
+        return true;
+      }
+    } catch (error) {
+      console.error('双缓冲渲染失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 绘制文本，支持自动换行
+   * @param ctx Canvas上下文
+   * @param text 文本内容
+   * @param x X坐标
+   * @param y Y坐标
+   * @param maxWidth 最大宽度
+   * @param lineHeight 行高
+   * @param font 字体设置（可选）
+   * @returns 最终的Y坐标位置
+   */
+  static drawWrappedText(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    x: number,
+    y: number,
+    maxWidth: number,
+    lineHeight: number,
+    font?: string
+  ): number {
+    if (!text) return y;
+    
+    if (font) {
+      ctx.font = font;
+    }
+    
+    const words = text.split('');
+    let line = '';
+    let testLine = '';
+    let testWidth = 0;
+    
+    for (let n = 0; n < words.length; n++) {
+      testLine = line + words[n];
+      testWidth = ctx.measureText(testLine).width;
+      
+      if (testWidth > maxWidth && n > 0) {
+        ctx.fillText(line, x, y);
+        line = words[n];
+        y += lineHeight;
+      } else {
+        line = testLine;
+      }
+    }
+    
+    ctx.fillText(line, x, y);
+    return y + lineHeight;
   }
 }
 

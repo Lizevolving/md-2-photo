@@ -4,28 +4,8 @@
  */
 
 import { CanvasRenderUtils } from './renderUtils';
-
-// 由于引用renderUtils.ts中的类型声明可能存在问题，这里重新声明一下
-// 这些声明在编译时会被合并
-declare interface TextMetrics {
-  width: number;
-}
-
-declare interface CanvasRenderingContext2D {
-  font: string;
-  fillStyle: string | any;
-  strokeStyle: string | any;
-  lineWidth: number;
-  measureText(text: string): TextMetrics;
-  fillText(text: string, x: number, y: number, maxWidth?: number): void;
-  fillRect(x: number, y: number, width: number, height: number): void;
-  beginPath(): void;
-  moveTo(x: number, y: number): void;
-  lineTo(x: number, y: number): void;
-  stroke(): void;
-  clearRect(x: number, y: number, width: number, height: number): void;
-  scale(x: number, y: number): void;
-}
+// 导入类型定义
+import './types';
 
 // 定义 Markdown 节点类型
 export interface IMarkdownNode {

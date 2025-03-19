@@ -180,14 +180,32 @@ Page({
    * 处理转换为图片
    */
   handleConvertToImage() {
-    if (!this.data.hasContent) return;
-    
+    // 确保至少有一项内容
+    if (!this.data.answerContent && !this.data.questionContent) {
+      wx.showToast({
+        title: '请输入问题或回答内容',
+        icon: 'none'
+      });
+      return;
+    }
+
     console.log('准备转换为图片');
-    console.log('问题内容长度:', this.data.questionContent.length);
-    console.log('回答内容长度:', this.data.answerContent.length);
+    console.log('问题长度:', this.data.questionContent.length);
+    console.log('回答长度:', this.data.answerContent.length);
     
+    // 简化URL构建，设置默认值为空字符串
+    const url = `/pages/preview/preview?questionContent=${encodeURIComponent(this.data.questionContent || '')}&answerContent=${encodeURIComponent(this.data.answerContent || '')}`;
+    
+    // 直接导航
     wx.navigateTo({
-      url: '/pages/preview/preview?questionContent=' + encodeURIComponent(this.data.questionContent) + '&answerContent=' + encodeURIComponent(this.data.answerContent) + '&showWatermark=' + this.data.showWatermark
+      url,
+      fail: (err) => {
+        console.error('页面跳转失败:', err);
+        wx.showToast({
+          title: '页面跳转失败',
+          icon: 'none'
+        });
+      }
     });
   },
 
@@ -229,5 +247,5 @@ Page({
       visible: true,
       content: this.data.answerContent
     });
-  },
+  }
 });

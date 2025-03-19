@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "预览",
+  "navigationBarBackgroundColor": "#000000",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#000000",
+  "backgroundTextStyle": "light",
+  "enablePullDownRefresh": false,
+  "disableScroll": true,
+  "usingComponents": {}
+} 

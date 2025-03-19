@@ -1,40 +1,11 @@
 // 手动定义 simple-markdown 类型，避免类型错误
 declare module '@khanacademy/simple-markdown' {
-  export function defaultBlockParse(source: string): any[];
-  export function defaultInlineParse(source: string): any[];
-  export function defaultImplicitParse(source: string): any[];
-  export function parserFor(rules: any): (source: string, state?: any) => any[];
-  export function outputFor(rules: any, key: string): (tree: any[], state?: any) => any;
+  export function defaultBlockParse(source: string): any[]
   export const defaultRules: any;
 }
 
-declare interface TextMetrics {
-  width: number;
-}
-
-declare interface CanvasRenderingContext2D {
-  font: string;
-  fillStyle: string | any;
-  strokeStyle: string | any;
-  lineWidth: number;
-  measureText(text: string): TextMetrics;
-  fillText(text: string, x: number, y: number, maxWidth?: number): void;
-  fillRect(x: number, y: number, width: number, height: number): void;
-  beginPath(): void;
-  moveTo(x: number, y: number): void;
-  lineTo(x: number, y: number): void;
-  quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): void;
-  closePath(): void;
-  fill(): void;
-  stroke(): void;
-  clearRect(x: number, y: number, width: number, height: number): void;
-  scale(x: number, y: number): void;
-  shadowColor?: string;
-  shadowBlur?: number;
-  shadowOffsetX?: number;
-  shadowOffsetY?: number;
-}
-
+// 导入全局类型定义
+import '../../utils/types';
 import SimpleMarkdown from '@khanacademy/simple-markdown';
 import { CanvasRenderUtils } from '../../utils/renderUtils';
 import { MarkdownRenderer, IMarkdownNode, defaultMarkdownStyles, RenderContext } from '../../utils/markdownRenderer';
@@ -106,7 +77,7 @@ Page({
     currentTemplate: 'default', // 当前使用的模板
     parsedQuestion: [] as IMarkdownNode[],
     parsedAnswer: [] as IMarkdownNode[],
-    isRendering: false,
+    isRendering: true, // 默认显示加载状态
     renderProgress: 0
   } as IPageData,
 
@@ -116,7 +87,19 @@ Page({
   canvasContext: null as any,
 
   onLoad(options?: Record<string, string | undefined>) {
-    if (!options) return;
+    console.log('预览页面加载', options);
+    
+    if (!options) {
+      console.error('没有传入选项参数');
+      wx.showToast({
+        title: '页面参数错误',
+        icon: 'none'
+      });
+      return;
+    }
+    
+    // 立即设置渲染状态
+    this.setData({ isRendering: true, renderProgress: 0 });
     
     // 初始化 Markdown 解析器
     this.initMarkdownParser();
@@ -124,26 +107,63 @@ Page({
     // 解析传入的内容
     this.parseContent(options);
     
-    // 初始化画布尺寸
-    this.initCanvasSize();
+    // 延迟一下再初始化Canvas，确保DOM已经准备好
+    setTimeout(() => {
+      this.initCanvasSize();
+    }, 300);
+  },
+  
+  onReady() {
+    console.log('预览页面ready');
+  },
+  
+  onShow() {
+    console.log('预览页面显示');
+    // 如果画布已初始化但没有成功渲染，尝试重新渲染
+    if (this.canvasNode && !this.canvasContext) {
+      this.renderToCanvas();
+    }
   },
 
   /**
    * 初始化 Markdown 解析器
    */
   initMarkdownParser() {
-    // 使用 simple-markdown 的默认规则
-    this.mdParser = SimpleMarkdown.defaultBlockParse;
+    try {
+      // 使用 simple-markdown 的默认规则
+      this.mdParser = SimpleMarkdown.defaultBlockParse;
+      console.log('Markdown解析器初始化成功');
+    } catch (error) {
+      console.error('Markdown解析器初始化失败:', error);
+      this.mdParser = (text: string) => [{
+        type: 'paragraph',
+        content: [{
+          type: 'text',
+          content: text
+        }]
+      }];
+    }
   },
 
   /**
    * 解析传入的内容
    */
   parseContent(options: Record<string, string | undefined>) {
+    console.log('解析传入内容', options);
+    
     const { questionContent, answerContent, showWatermark } = options;
     
     const question = questionContent ? decodeURIComponent(questionContent) : '';
     const answer = answerContent ? decodeURIComponent(answerContent) : '';
+    
+    console.log('解析后的内容长度:', {
+      questionLength: question.length,
+      answerLength: answer.length
+    });
+    
+    if (!question && !answer) {
+      console.warn('问题和回答内容都为空！');
+    }
     
     // 解析 Markdown 内容
     const parsedQuestion = this.parseMarkdown(question);
@@ -156,6 +176,8 @@ Page({
       parsedQuestion,
       parsedAnswer
     });
+    
+    this.setData({ renderProgress: 5 });
   },
 
   /**
@@ -180,16 +202,41 @@ Page({
   },
 
   /**
+   * 重试渲染
+   */
+  retryRendering() {
+    console.log('尝试重新渲染');
+    // 重置渲染状态
+    this.setData({ isRendering: true, renderProgress: 0 });
+    
+    // 重新初始化Canvas
+    this.initCanvasSize();
+  },
+
+  /**
    * 初始化画布尺寸
    */
   initCanvasSize() {
+    console.log('初始化Canvas尺寸');
     wx.getSystemInfo({
       success: (res) => {
         this.setData({
           canvasWidth: res.windowWidth,
-          canvasHeight: res.windowHeight * 0.7 // 设置为屏幕高度的70%，避免太长
+          canvasHeight: res.windowHeight * 0.7 // 设置为屏幕高度的70%
         }, () => {
           // 初始化完成后渲染画布
+          setTimeout(() => {
+            this.renderToCanvas();
+          }, 100);
+        });
+      },
+      fail: (err) => {
+        console.error('获取系统信息失败:', err);
+        // 使用默认尺寸
+        this.setData({
+          canvasWidth: 375,
+          canvasHeight: 500
+        }, () => {
           this.renderToCanvas();
         });
       }
@@ -201,27 +248,54 @@ Page({
    */
   async renderToCanvas() {
     try {
+      // 设置渲染状态，开始渲染
       this.setData({ isRendering: true, renderProgress: 0 });
+      console.log('开始渲染，设置状态:', { isRendering: true, renderProgress: 0 });
       
-      // 获取Canvas节点
-      this.canvasNode = await this.getCanvasNode();
+      // 获取Canvas节点 - 使用Promise.race添加超时处理
+      const canvasPromise = this.getCanvasNode();
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('获取Canvas节点超时')), 3000);
+      });
+      
+      this.canvasNode = await Promise.race([canvasPromise, timeoutPromise]) as WechatMiniprogram.Canvas;
+      
       if (!this.canvasNode) {
         throw new Error('无法获取Canvas节点');
       }
+      console.log('成功获取Canvas节点');
       
+      // 获取渲染上下文
       this.canvasContext = this.canvasNode.getContext('2d');
+      if (!this.canvasContext) {
+        throw new Error('无法获取Canvas渲染上下文');
+      }
+      console.log('成功获取Canvas渲染上下文');
       
       // 设置Canvas尺寸（高清显示）
-      const dpr = wx.getSystemInfoSync().pixelRatio;
+      const dpr = wx.getSystemInfoSync().pixelRatio || 1;
       this.canvasNode.width = this.data.canvasWidth * dpr;
       this.canvasNode.height = this.data.canvasHeight * dpr;
       this.canvasContext.scale(dpr, dpr);
+      console.log('设置Canvas尺寸:', {
+        width: this.canvasNode.width,
+        height: this.canvasNode.height,
+        dpr: dpr
+      });
+      
+      // 清空画布
+      this.canvasContext.clearRect(0, 0, this.canvasNode.width, this.canvasNode.height);
+      
+      this.setData({ renderProgress: 10 });
       
       // 渲染前先计算内容高度
+      console.log('开始计算内容高度');
       const contentHeight = await this.calculateContentHeight();
+      console.log('内容高度计算完成:', contentHeight);
       
       // 如果内容高度超过Canvas高度，则更新Canvas高度
       if (contentHeight > this.data.canvasHeight) {
+        console.log('更新Canvas高度:', contentHeight);
         this.canvasNode.height = contentHeight * dpr;
         this.canvasContext.scale(dpr, dpr);
         this.setData({ canvasHeight: contentHeight });
@@ -230,14 +304,22 @@ Page({
       this.setData({ renderProgress: 30 });
       
       // 根据当前模板渲染内容
+      console.log('开始渲染模板:', this.data.currentTemplate);
       await this.renderTemplate();
+      console.log('模板渲染完成');
       
-      this.setData({ isRendering: false, renderProgress: 100 });
+      this.setData({ renderProgress: 100, isRendering: false });
+      console.log('渲染完成，设置状态:', { isRendering: false, renderProgress: 100 });
     } catch (error) {
       console.error('渲染失败:', error);
+      // 显示详细错误信息
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.log('错误详情:', errorMessage);
+      
       wx.showToast({
-        title: '渲染失败，请重试',
-        icon: 'none'
+        title: '渲染失败: ' + errorMessage,
+        icon: 'none',
+        duration: 2000
       });
       this.setData({ isRendering: false });
     }
@@ -248,16 +330,22 @@ Page({
    */
   async getCanvasNode(): Promise<WechatMiniprogram.Canvas> {
     return new Promise((resolve, reject) => {
-      const query = wx.createSelectorQuery();
-      query.select('#previewCanvas')
-        .fields({ node: true, size: true })
-        .exec((res) => {
-          if (res && res[0] && res[0].node) {
-            resolve(res[0].node);
-          } else {
-            reject(new Error('获取Canvas节点失败'));
-          }
-        });
+      try {
+        const query = wx.createSelectorQuery();
+        query.select('#previewCanvas')
+          .fields({ node: true, size: true })
+          .exec((res) => {
+            console.log('Canvas查询结果:', res);
+            if (res && res[0] && res[0].node) {
+              resolve(res[0].node);
+            } else {
+              reject(new Error('获取Canvas节点失败，无法获取node属性'));
+            }
+          });
+      } catch (error) {
+        console.error('查询Canvas节点异常:', error);
+        reject(new Error('查询Canvas节点异常: ' + String(error)));
+      }
     });
   },
 
@@ -328,33 +416,67 @@ Page({
   async renderTemplate() {
     if (!this.canvasContext) return;
     
-    // 清空画布
-    this.canvasContext.clearRect(0, 0, this.data.canvasWidth, this.data.canvasHeight);
+    // 更新进度
+    this.setData({ renderProgress: 50 });
     
-    switch (this.data.currentTemplate) {
-      case 'simple':
-        await this.renderSimpleTemplate();
-        break;
-      case 'book':
-        await this.renderBookTemplate();
-        break;
-      case 'dialog':
-        await this.renderDialogTemplate();
-        break;
-      default:
-        await this.renderDefaultTemplate();
+    // 使用双缓冲渲染内容，避免闪烁
+    try {
+      console.log('使用双缓冲渲染模板');
+      
+      // 使用渲染工具类的双缓冲方法
+      await CanvasRenderUtils.renderWithDoubleBuffering(
+        this.canvasContext,
+        this.data.canvasWidth,
+        this.data.canvasHeight,
+        async (ctx) => {
+          // 根据当前模板类型渲染内容
+          switch (this.data.currentTemplate) {
+            case 'simple':
+              await this.renderSimpleTemplateToContext(ctx);
+              break;
+            case 'book':
+              await this.renderBookTemplateToContext(ctx);
+              break;
+            case 'dialog':
+              await this.renderDialogTemplateToContext(ctx);
+              break;
+            default:
+              await this.renderDefaultTemplateToContext(ctx);
+          }
+        }
+      );
+      
+      this.setData({ renderProgress: 90 });
+      console.log('双缓冲渲染完成');
+    } catch (error) {
+      console.error('双缓冲渲染失败:', error);
+      
+      // 失败后尝试直接渲染
+      console.log('尝试直接渲染');
+      
+      // 清空画布
+      this.canvasContext.clearRect(0, 0, this.data.canvasWidth, this.data.canvasHeight);
+      
+      switch (this.data.currentTemplate) {
+        case 'simple':
+          await this.renderSimpleTemplateToContext(this.canvasContext);
+          break;
+        case 'book':
+          await this.renderBookTemplateToContext(this.canvasContext);
+          break;
+        case 'dialog':
+          await this.renderDialogTemplateToContext(this.canvasContext);
+          break;
+        default:
+          await this.renderDefaultTemplateToContext(this.canvasContext);
+      }
     }
-
-    this.setData({ renderProgress: 90 });
   },
 
   /**
-   * 渲染默认模板
+   * 渲染默认模板到指定上下文
    */
-  async renderDefaultTemplate() {
-    if (!this.canvasContext) return;
-    const ctx = this.canvasContext;
-    
+  async renderDefaultTemplateToContext(ctx: CanvasRenderingContext2D) {
     const style = templateStyles.default;
     const contentPadding = style.padding;
     const contentWidth = this.data.canvasWidth - (contentPadding * 2);
@@ -417,12 +539,17 @@ Page({
   },
 
   /**
-   * 渲染简约模板
+   * 渲染默认模板
    */
-  async renderSimpleTemplate() {
+  async renderDefaultTemplate() {
     if (!this.canvasContext) return;
-    const ctx = this.canvasContext;
-    
+    await this.renderDefaultTemplateToContext(this.canvasContext);
+  },
+
+  /**
+   * 渲染简约模板到指定上下文
+   */
+  async renderSimpleTemplateToContext(ctx: CanvasRenderingContext2D) {
     const style = templateStyles.simple;
     const contentPadding = style.padding;
     const contentWidth = this.data.canvasWidth - (contentPadding * 2);
@@ -488,12 +615,17 @@ Page({
   },
 
   /**
-   * 渲染书籍模板
+   * 渲染简约模板
    */
-  async renderBookTemplate() {
+  async renderSimpleTemplate() {
     if (!this.canvasContext) return;
-    const ctx = this.canvasContext;
-    
+    await this.renderSimpleTemplateToContext(this.canvasContext);
+  },
+
+  /**
+   * 渲染书籍模板到指定上下文
+   */
+  async renderBookTemplateToContext(ctx: CanvasRenderingContext2D) {
     const style = templateStyles.book;
     const contentPadding = style.padding;
     const contentWidth = this.data.canvasWidth - (contentPadding * 2);
@@ -590,12 +722,17 @@ Page({
   },
 
   /**
-   * 渲染对话模板
+   * 渲染书籍模板
    */
-  async renderDialogTemplate() {
+  async renderBookTemplate() {
     if (!this.canvasContext) return;
-    const ctx = this.canvasContext;
-    
+    await this.renderBookTemplateToContext(this.canvasContext);
+  },
+
+  /**
+   * 渲染对话模板到指定上下文
+   */
+  async renderDialogTemplateToContext(ctx: CanvasRenderingContext2D) {
     const style = templateStyles.dialog;
     const contentPadding = style.padding;
     const contentWidth = this.data.canvasWidth - (contentPadding * 2);
@@ -668,6 +805,14 @@ Page({
       ctx.font = '12px sans-serif';
       ctx.fillText('由文图小程序生成', this.data.canvasWidth - 150, this.data.canvasHeight - 30);
     }
+  },
+
+  /**
+   * 渲染对话模板
+   */
+  async renderDialogTemplate() {
+    if (!this.canvasContext) return;
+    await this.renderDialogTemplateToContext(this.canvasContext);
   },
 
   /**

@@ -2,9 +2,23 @@
 <view class="preview-container">
   <!-- 图片预览区域 -->
   <scroll-view class="preview-scroll" scroll-y>
-    <canvas type="2d" id="previewCanvas" class="preview-canvas"></canvas>
-  </scroll-view>
-  
+    <!-- 确保canvas正确渲染，添加明确的宽高样式 -->
+    <canvas type="2d" id="previewCanvas" class="preview-canvas" style="width: {{canvasWidth}}px; height: {{canvasHeight}}px;"></canvas>
+    
+
+    <!-- 加载指示器 -->
+    <view class="loading-container" wx:if="{{isRendering}}">
+      <view class="loading-spinner"></view>
+      <view class="loading-text">正在渲染 ({{renderProgress}}%)</view>
+      <view class="progress-bar">
+        <view class="progress-inner" style="width: {{renderProgress}}%;"></view>
+      </view>
+      <!-- 重试按钮 -->
+      <view class="retry-button" bindtap="retryRendering">重新渲染</view>
+    </view>
+  </scroll-view> <!-- 添加 scroll-view 结束标签 -->
+
+
   <!-- 底部操作区 -->
   <view class="bottom-area">
     <!-- 主要操作按钮 -->
@@ -25,9 +39,9 @@
         <image class="btn-icon" src="/assets/icons/moments.png" />
         <text>分享到朋友圈</text>
       </view>
-      <view class="action-btn" bindtap="shareToOther">
-        <image class="btn-icon" src="/assets/icons/more.png" />
-        <text>分享到其他</text>
+      <view class="action-btn" bindtap="retryRendering">
+        <image class="btn-icon" src="/assets/icons/refresh.png" />
+        <text>重新渲染</text>
       </view>
     </view>
 
